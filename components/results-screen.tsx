@@ -1,11 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { ArrowRight, X, Bug, Zap, LifeBuoy, TrendingUp, Wrench } from "lucide-react"
+import { ArrowRight, X, Bug, Zap, LifeBuoy, TrendingUp, Wrench, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { WordCloud } from "@/components/word-cloud"
-import type { AnalysisResult, FlagCategory, Theme } from "@/lib/nps-data"
+import type { AnalysisResult, FlagCategory, Theme, BenchmarkResponse } from "@/lib/nps-data"
 
 interface ResultsScreenProps {
   data: AnalysisResult
@@ -23,6 +23,21 @@ const flagMeta: Record<FlagCategory, { label: string; icon: typeof Bug; classNam
   bug: { label: "Bug", icon: Bug, className: "bg-detractor-muted text-detractor" },
   friction: { label: "Friction", icon: Zap, className: "bg-passive-muted text-passive" },
   support: { label: "Support", icon: LifeBuoy, className: "bg-muted text-muted-foreground" },
+}
+
+function getBenchmarkBadgeColor(sentiment: BenchmarkResponse["sentiment"]) {
+  switch (sentiment) {
+    case "excellent":
+    case "above-benchmark":
+      return "bg-promoter-muted text-promoter"
+    case "at-benchmark":
+      return "bg-promoter-muted/50 text-promoter"
+    case "below-benchmark":
+    case "needs-attention":
+      return "bg-detractor-muted text-detractor"
+    default:
+      return "bg-muted text-muted-foreground"
+  }
 }
 
 export function ResultsScreen({ data, onExport, onReset }: ResultsScreenProps) {
@@ -72,6 +87,23 @@ export function ResultsScreen({ data, onExport, onReset }: ResultsScreenProps) {
           </div>
         ))}
       </div>
+
+      {/* Benchmark badge */}
+      {data.benchmark && (
+        <div className="mt-6 rounded-lg border border-border bg-card p-5">
+          <div className="flex items-start gap-4">
+            <div className={cn("rounded-lg px-3 py-2 text-sm font-medium flex items-center gap-2", getBenchmarkBadgeColor(data.benchmark.sentiment))}>
+              <AlertCircle className="size-4" />
+              {data.benchmark.remark}
+            </div>
+            <div className="flex-1">
+              <p className="text-xs text-muted-foreground">
+                Industry benchmark: <span className="font-medium">{data.benchmark.source}</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Word clouds */}
       <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">

@@ -36,12 +36,32 @@ export interface ClusterResult {
   unclustered?: { rowRef: string; reason: string }[]
 }
 
+export type BusinessType = "B2B" | "B2C"
+export type Model = "SaaS" | "Service-based"
+export type SurveyFrequency = "First time" | "Monthly" | "Quarterly" | "Annually"
+
+export interface BenchmarkContext {
+  industry: string
+  businessType: BusinessType
+  model: Model
+  surveyFrequency: SurveyFrequency
+}
+
+export interface BenchmarkResponse {
+  npsScore: number
+  remark: string
+  source: string
+  sentiment: "pending" | "needs-attention" | "below-benchmark" | "at-benchmark" | "above-benchmark" | "excellent"
+}
+
 export interface AnalysisResult {
   metrics: { promoter: number; passive: number; detractor: number }
   themes: Theme[]
   flags: Flag[]
   actionList: ActionItem[]
   responses: ResponseRow[]
+  benchmark?: BenchmarkResponse
+  context?: BenchmarkContext
 }
 
 // ── Segmentation + analysis from real rows ────────────────────────

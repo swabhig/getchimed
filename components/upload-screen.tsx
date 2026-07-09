@@ -6,7 +6,7 @@ import { Upload, Link2, FileSpreadsheet, ArrowRight, Check, Loader2, AlertCircle
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/client"
-import { assembleAnalysis, segmentRows, type AnalysisResult, type ClusterResult, type ResponseRow } from "@/lib/nps-data"
+import { assembleAnalysis, segmentRows, type AnalysisResult, type ClusterResult, type ResponseRow, type BenchmarkContext, type BusinessType, type Model, type SurveyFrequency } from "@/lib/nps-data"
 
 interface UploadScreenProps {
   onAnalyze: (data: AnalysisResult) => void
@@ -67,12 +67,23 @@ export function UploadScreen({ onAnalyze }: UploadScreenProps) {
     comment: "",
     persona: "",
   })
-  const [status, setStatus] = useState<"idle" | "parsing" | "inserting" | "analyzing">("idle")
+  const [status, setStatus] = useState<"idle" | "parsing" | "inserting" | "analyzing" | "benchmarking">("idle")
   const [error, setError] = useState<string | null>(null)
+  const [context, setContext] = useState<BenchmarkContext>({
+    industry: "",
+    businessType: "B2B",
+    model: "SaaS",
+    surveyFrequency: "First time",
+  })
   const inputRef = useRef<HTMLInputElement>(null)
 
   const hasData = columns.length > 0 && rawRows.length > 0
-  const canAnalyze = hasData && mapping.score !== "" && mapping.comment !== "" && status === "idle"
+  const canAnalyze =
+    hasData &&
+    mapping.score !== "" &&
+    mapping.comment !== "" &&
+    context.industry !== "" &&
+    status === "idle"
 
   function parseFile(file: File) {
     setError(null)
@@ -180,6 +191,31 @@ export function UploadScreen({ onAnalyze }: UploadScreenProps) {
 
       // Metrics stay score-based; themes + flags come straight from the API.
       const analysis = assembleAnalysis(rows, cluster)
+      
+      // Call benchmark endpoint
+      setStatus("benchmarking")
+      const avgScore = Math.round(rows.reduce((sum, r) => sum + r.score, 0) / rows.length)
+      try {
+        const benchmarkRes = await fetch("/api/benchmark", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            npsScore: avgScore,
+            industry: context.industry,
+            businessType: context.businessType,
+            model: context.model,
+          }),
+        })
+        
+        if (benchmarkRes.ok) {
+          const benchmark = await benchmarkRes.json()
+          analysis.benchmark = benchmark
+        }
+      } catch (benchmarkErr) {
+        console.log("[v0] Benchmark fetch failed:", benchmarkErr)
+      }
+      
+      analysis.context = context
       setStatus("idle")
       onAnalyze(analysis)
     } catch (err) {
@@ -341,6 +377,100 @@ export function UploadScreen({ onAnalyze }: UploadScreenProps) {
         </div>
       )}
 
+      {/* Context fields */}
+      {hasData && (
+        <div className="mt-8 rounded-lg border border-border bg-card p-5">
+          <h2 className="text-sm font-medium text-foreground">About your business</h2>
+          <p className="mt-1 text-xs text-muted-foreground">Help us benchmark your NPS score against industry standards.</p>
+          
+          <div className="mt-4 space-y-4">
+            {/* Industry */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="industry" className="text-sm font-medium text-foreground">
+                Industry <span className="ml-1 text-detractor">*</span>
+              </label>
+              <input
+                id="industry"
+                type="text"
+                value={context.industry}
+                onChange={(e) => setContext((c) => ({ ...c, industry: e.target.value }))}
+                placeholder="e.g. SaaS, Healthcare, Finance"
+                className={cn(
+                  "h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                )}
+              />
+            </div>
+
+            {/* Business Type Toggle */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-foreground">Business type</label>
+              <div className="inline-flex rounded-lg border border-border bg-muted p-1 w-fit">
+                {(["B2B", "B2C"] as const).map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setContext((c) => ({ ...c, businessType: type }))}
+                    className={cn(
+                      "px-3 py-1.5 text-sm font-medium rounded-md transition-colors",
+                      context.businessType === type
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Model Toggle */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-foreground">Model</label>
+              <div className="inline-flex rounded-lg border border-border bg-muted p-1 w-fit">
+                {(["SaaS", "Service-based"] as const).map((model) => (
+                  <button
+                    key={model}
+                    type="button"
+                    onClick={() => setContext((c) => ({ ...c, model }))}
+                    className={cn(
+                      "px-3 py-1.5 text-sm font-medium rounded-md transition-colors",
+                      context.model === model
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {model}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Survey Frequency Dropdown */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="frequency" className="text-sm font-medium text-foreground">
+                Survey frequency
+              </label>
+              <select
+                id="frequency"
+                value={context.surveyFrequency}
+                onChange={(e) => setContext((c) => ({ ...c, surveyFrequency: e.target.value as SurveyFrequency }))}
+                className={cn(
+                  "h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                )}
+              >
+                {(["First time", "Monthly", "Quarterly", "Annually"] as const).map((freq) => (
+                  <option key={freq} value={freq}>
+                    {freq}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Analyze */}
       <div className="mt-8 flex items-center justify-between gap-4">
         <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -363,6 +493,11 @@ export function UploadScreen({ onAnalyze }: UploadScreenProps) {
             <>
               <Loader2 className="size-4 animate-spin" />
               Analyzing…
+            </>
+          ) : status === "benchmarking" ? (
+            <>
+              <Loader2 className="size-4 animate-spin" />
+              Benchmarking…
             </>
           ) : (
             <>
