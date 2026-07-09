@@ -96,7 +96,18 @@ export function computeMetrics(rows: ResponseRow[]): AnalysisResult["metrics"] {
   }
 }
 
+// Route theme to appropriate team based on content keywords.
+function getTeamForTheme(label: string): string {
+  const lower = label.toLowerCase()
+  if (/price|cost|billing|payment|invoice/.test(lower)) return "Sales"
+  if (/support|ticket|response|help|contact/.test(lower)) return "Support"
+  if (/bug|crash|error|broken|performance|reliability|slow/.test(lower)) return "Engineering"
+  if (/ui|ux|feature|mobile|design|interface/.test(lower)) return "Product"
+  return "Product" // default fallback
+}
+
 // Derive the prioritized action list from the LLM-clustered themes.
+// Note: themes are already validated to have short labels (1-4 words) by the LLM clustering rules.
 function buildActionList(themes: Theme[]): ActionItem[] {
   const byFreq = (a: Theme, b: Theme) => b.frequency - a.frequency
   return [
@@ -104,12 +115,12 @@ function buildActionList(themes: Theme[]): ActionItem[] {
       .filter((t) => t.segment === "promoter")
       .sort(byFreq)
       .slice(0, 2)
-      .map((t) => ({ theme: t.label, category: "double-down" as const, team: "Product", mentions: t.frequency })),
+      .map((t) => ({ theme: t.label, category: "double-down" as const, team: getTeamForTheme(t.label), mentions: t.frequency })),
     ...themes
       .filter((t) => t.segment === "passive")
       .sort(byFreq)
       .slice(0, 3)
-      .map((t) => ({ theme: t.label, category: "fix-blocker" as const, team: "Product", mentions: t.frequency })),
+      .map((t) => ({ theme: t.label, category: "fix-blocker" as const, team: getTeamForTheme(t.label), mentions: t.frequency })),
   ]
 }
 
