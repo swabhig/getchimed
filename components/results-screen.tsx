@@ -54,14 +54,37 @@ export function ResultsScreen({ data, onExport, onReset }: ResultsScreenProps) {
     setActiveTheme((cur) => (cur?.label === theme.label ? null : theme))
   }
 
+  // Calculate average NPS score for the hero
+  const avgScore = Math.round(data.responses.reduce((sum, r) => sum + r.score, 0) / data.responses.length)
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
-      <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
+      <header className="mb-10 flex flex-wrap items-end justify-between gap-6">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground text-balance">Analysis results</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Based on {data.responses.length} responses. Click any theme to see the comments behind it.
           </p>
+          
+          {/* NPS Hero with Benchmark Badge */}
+          <div className="mt-6 flex items-end gap-6">
+            <div>
+              <p className="text-xs font-medium tracking-widest uppercase text-muted-foreground">Your NPS Score</p>
+              <p className="mt-2 text-6xl font-bold tracking-tight text-foreground">{avgScore}</p>
+              
+              {/* Benchmark badge below score */}
+              {data.benchmark && (
+                <div className="mt-4 flex flex-col gap-1.5">
+                  <div className={cn("inline-flex w-fit rounded-full px-3 py-1 text-xs font-semibold", getBenchmarkBadgeColor(data.benchmark.sentiment))}>
+                    {data.benchmark.remark}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {data.benchmark.source}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={onReset}>
@@ -87,23 +110,6 @@ export function ResultsScreen({ data, onExport, onReset }: ResultsScreenProps) {
           </div>
         ))}
       </div>
-
-      {/* Benchmark badge */}
-      {data.benchmark && (
-        <div className="mt-6 rounded-lg border border-border bg-card p-5">
-          <div className="flex items-start gap-4">
-            <div className={cn("rounded-lg px-3 py-2 text-sm font-medium flex items-center gap-2", getBenchmarkBadgeColor(data.benchmark.sentiment))}>
-              <AlertCircle className="size-4" />
-              {data.benchmark.remark}
-            </div>
-            <div className="flex-1">
-              <p className="text-xs text-muted-foreground">
-                Industry benchmark: <span className="font-medium">{data.benchmark.source}</span>
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Word clouds */}
       <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
