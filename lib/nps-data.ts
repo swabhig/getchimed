@@ -97,13 +97,38 @@ export function computeMetrics(rows: ResponseRow[]): AnalysisResult["metrics"] {
 }
 
 // Route theme to appropriate team based on content keywords.
+// Checked in order of specificity: Engineering (critical issues) → Sales (pricing) → Support (tickets) → 
+// Customer Success (onboarding) → Product (UX/features). Only defaults to Product for clear UX/feature requests.
 function getTeamForTheme(label: string): string {
   const lower = label.toLowerCase()
-  if (/price|cost|billing|payment|invoice/.test(lower)) return "Sales"
-  if (/support|ticket|response|help|contact/.test(lower)) return "Support"
-  if (/bug|crash|error|broken|performance|reliability|slow/.test(lower)) return "Engineering"
-  if (/ui|ux|feature|mobile|design|interface/.test(lower)) return "Product"
-  return "Product" // default fallback
+  
+  // Engineering: bugs, crashes, reliability, performance issues, sync/downtime
+  if (/bug|crash|error|broken|fail|outage|downtime|sync|reliability|slow|lag|hang|freeze|exception/.test(lower)) {
+    return "Engineering"
+  }
+  
+  // Sales: pricing, billing, plans, costs
+  if (/price|pricing|cost|billing|plan|invoice|payment|subscription|tier/.test(lower)) {
+    return "Sales"
+  }
+  
+  // Support: support tickets, response time, help, contact
+  if (/support|ticket|response|help|contact|assistance|inquiry|request/.test(lower)) {
+    return "Support"
+  }
+  
+  // Customer Success: onboarding, setup, documentation, learning
+  if (/onboard|setup|document|guide|tutorial|learn|training|getting\s*started|import|export/.test(lower)) {
+    return "Customer Success"
+  }
+  
+  // Product: UX/UI, mobile, dashboard, features, interface, design
+  if (/ui|ux|mobile|dashboard|feature|interface|design|layout|button|modal|flow|workflow/.test(lower)) {
+    return "Product"
+  }
+  
+  // Default to Product only if no keyword matches found
+  return "Product"
 }
 
 // Derive the prioritized action list from the LLM-clustered themes.
