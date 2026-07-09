@@ -54,8 +54,8 @@ export function ResultsScreen({ data, onExport, onReset }: ResultsScreenProps) {
     setActiveTheme((cur) => (cur?.label === theme.label ? null : theme))
   }
 
-  // Calculate average NPS score for the hero
-  const avgScore = Math.round(data.responses.reduce((sum, r) => sum + r.score, 0) / data.responses.length)
+  // Calculate NPS score (promoter% - detractor%)
+  const npsScore = data.metrics.promoter - data.metrics.detractor
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
@@ -70,7 +70,7 @@ export function ResultsScreen({ data, onExport, onReset }: ResultsScreenProps) {
           <div className="mt-6 flex items-end gap-6">
             <div>
               <p className="text-xs font-medium tracking-widest uppercase text-muted-foreground">Your NPS Score</p>
-              <p className="mt-2 text-6xl font-bold tracking-tight text-foreground">{avgScore}</p>
+              <p className="mt-2 text-6xl font-bold tracking-tight text-foreground">{npsScore}</p>
               
               {/* Benchmark badge below score */}
               {data.benchmark && (
@@ -180,7 +180,8 @@ export function ResultsScreen({ data, onExport, onReset }: ResultsScreenProps) {
             <thead>
               <tr className="border-b border-border text-left text-xs text-muted-foreground">
                 <th className="w-16 px-4 py-2.5 font-medium">Score</th>
-                <th className="px-4 py-2.5 font-medium">Comment</th>
+                <th className="px-4 py-2.5 font-medium">Main benefit</th>
+                <th className="px-4 py-2.5 font-medium">Improvement</th>
                 <th className="hidden w-32 px-4 py-2.5 font-medium sm:table-cell">Persona</th>
               </tr>
             </thead>
@@ -201,13 +202,14 @@ export function ResultsScreen({ data, onExport, onReset }: ResultsScreenProps) {
                       {row.score}
                     </span>
                   </td>
-                  <td className="px-4 py-2.5 text-foreground">{row.comment}</td>
+                  <td className="px-4 py-2.5 text-foreground">{row.main_benefit}</td>
+                  <td className="px-4 py-2.5 text-foreground">{row.improvement}</td>
                   <td className="hidden px-4 py-2.5 text-muted-foreground sm:table-cell">{row.persona}</td>
                 </tr>
               ))}
               {visibleRows.length === 0 && (
                 <tr>
-                  <td colSpan={3} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                  <td colSpan={4} className="px-4 py-8 text-center text-sm text-muted-foreground">
                     No responses match this theme.
                   </td>
                 </tr>
