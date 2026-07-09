@@ -216,6 +216,21 @@ export function UploadScreen({ onAnalyze }: UploadScreenProps) {
       }
       
       analysis.context = context
+      
+      // Save analysis + context to Supabase
+      try {
+        const supabase = createClient()
+        await supabase.from("analyses").insert({
+          themes: analysis.themes,
+          flags: analysis.flags,
+          action_list: analysis.actionList,
+          context: context,
+        })
+      } catch (saveErr) {
+        console.log("[v0] Failed to save analysis to database:", saveErr)
+        // Don't block the flow if save fails
+      }
+      
       setStatus("idle")
       onAnalyze(analysis)
     } catch (err) {
