@@ -89,6 +89,7 @@ async function callClaude(systemPrompt: string, comments: CommentInput[]) {
 
   if (!response.ok) {
     const errText = await response.text();
+    console.error("[v0] Anthropic API error response:", { status: response.status, body: errText });
     throw new Error(`Anthropic API error: ${response.status} ${errText}`);
   }
 
@@ -105,6 +106,19 @@ async function callClaude(systemPrompt: string, comments: CommentInput[]) {
 
 export async function POST(req: NextRequest) {
   try {
+    // Validate API key is set and has reasonable format
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: "ANTHROPIC_API_KEY environment variable is not set" },
+        { status: 500 }
+      );
+    }
+    
+    if (!apiKey.startsWith("sk-ant-")) {
+      console.warn("[v0] Warning: ANTHROPIC_API_KEY does not start with 'sk-ant-', format may be invalid");
+    }
+    
     const body = await req.json();
     const {
       promoterComments,
