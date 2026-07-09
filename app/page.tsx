@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import { UploadScreen } from "@/components/upload-screen"
 import { ResultsScreen } from "@/components/results-screen"
 import { ExportScreen } from "@/components/export-screen"
-import { mockAnalysis } from "@/lib/nps-data"
+import { mockAnalysis, type AnalysisResult } from "@/lib/nps-data"
 
 type Step = "upload" | "results" | "export"
 
@@ -18,6 +18,7 @@ const steps: { key: Step; label: string }[] = [
 
 export default function Page() {
   const [step, setStep] = useState<Step>("upload")
+  const [analysis, setAnalysis] = useState<AnalysisResult>(mockAnalysis)
   const activeIndex = steps.findIndex((s) => s.key === step)
 
   return (
@@ -60,11 +61,18 @@ export default function Page() {
         </div>
       </header>
 
-      {step === "upload" && <UploadScreen onAnalyze={() => setStep("results")} />}
-      {step === "results" && (
-        <ResultsScreen data={mockAnalysis} onExport={() => setStep("export")} onReset={() => setStep("upload")} />
+      {step === "upload" && (
+        <UploadScreen
+          onAnalyze={(data) => {
+            setAnalysis(data)
+            setStep("results")
+          }}
+        />
       )}
-      {step === "export" && <ExportScreen data={mockAnalysis} onBack={() => setStep("results")} />}
+      {step === "results" && (
+        <ResultsScreen data={analysis} onExport={() => setStep("export")} onReset={() => setStep("upload")} />
+      )}
+      {step === "export" && <ExportScreen data={analysis} onBack={() => setStep("results")} />}
     </main>
   )
 }

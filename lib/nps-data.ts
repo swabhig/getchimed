@@ -37,6 +37,103 @@ export interface AnalysisResult {
   responses: ResponseRow[]
 }
 
+// ── Segmentation + analysis from real rows ────────────────────────
+export function segmentForScore(score: number): Segment {
+  if (score >= 9) return "promoter"
+  if (score >= 7) return "passive"
+  return "detractor"
+}
+
+export interface SegmentedRows {
+  promoter: ResponseRow[]
+  passive: ResponseRow[]
+  detractor: ResponseRow[]
+}
+
+export function segmentRows(rows: ResponseRow[]): SegmentedRows {
+  const groups: SegmentedRows = { promoter: [], passive: [], detractor: [] }
+  for (const row of rows) groups[segmentForScore(row.score)].push(row)
+  return groups
+}
+
+const STOPWORDS = new Set([
+  "the", "and", "a", "an", "to", "of", "is", "it", "in", "for", "on", "with", "was", "but",
+  "that", "this", "i", "we", "my", "our", "you", "your", "so", "very", "too", "at", "as",
+  "are", "be", "have", "has", "had", "not", "no", "they", "them", "me", "us", "im", "its",
+  "just", "really", "would", "could", "when", "than", "then", "there", "here", "some", "all",
+])
+
+function topWords(rows: ResponseRow[], limit: number): { word: string; count: number; rowRefs: number[] }[] {
+  const counts = new Map<string, { count: number; rowRefs: Set<number> }>()
+  for (const row of rows) {
+    const words = new Set(
+      (row.comment || "")
+        .toLowerCase()
+        .replace(/[^a-z\s]/g, " ")
+        .split(/\s+/)
+        .filter((w) => w.length > 2 && !STOPWORDS.has(w)),
+    )
+    for (const w of words) {
+      const entry = counts.get(w) ?? { count: 0, rowRefs: new Set<number>() }
+      entry.count += 1
+      entry.rowRefs.add(row.id)
+      counts.set(w, entry)
+    }
+  }
+  return [...counts.entries()]
+    .map(([word, { count, rowRefs }]) => ({ word, count, rowRefs: [...rowRefs] }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit)
+}
+
+function categorizeFlag(comment: string): FlagCategory {
+  const c = comment.toLowerCase()
+  if (/(bug|crash|broke|broken|error|glitch)/.test(c)) return "bug"
+  if (/(support|response|help|team|reply)/.test(c)) return "support"
+  return "friction"
+}
+
+export function buildAnalysis(rows: ResponseRow[]): AnalysisResult {
+  const total = rows.length || 1
+  const groups = segmentRows(rows)
+
+  const metrics = {
+    promoter: Math.round((groups.promoter.length / total) * 100),
+    passive: Math.round((groups.passive.length / total) * 100),
+    detractor: Math.round((groups.detractor.length / total) * 100),
+  }
+
+  const buildThemes = (segRows: ResponseRow[], segment: Segment): Theme[] =>
+    topWords(segRows, 8).map((w) => ({
+      label: w.word,
+      segment,
+      frequency: w.count,
+      rowRefs: w.rowRefs,
+    }))
+
+  const themes = [
+    ...buildThemes(groups.promoter, "promoter"),
+    ...buildThemes(groups.passive, "passive"),
+  ]
+
+  const flags: Flag[] = groups.detractor.map((row) => ({
+    comment: row.comment,
+    category: categorizeFlag(row.comment),
+    rowRef: row.id,
+  }))
+
+  const actionList: ActionItem[] = [
+    ...buildThemes(groups.promoter, "promoter")
+      .slice(0, 2)
+      .map((t) => ({ theme: t.label, category: "double-down" as const, team: "Product", mentions: t.frequency })),
+    ...buildThemes(groups.passive, "passive")
+      .slice(0, 3)
+      .map((t) => ({ theme: t.label, category: "fix-blocker" as const, team: "Product", mentions: t.frequency })),
+  ]
+
+  return { metrics, themes, flags, actionList, responses: rows }
+}
+
 // ── Mock responses ────────────────────────────────────────────────
 export const mockResponses: ResponseRow[] = [
   { id: 12, score: 10, comment: "Incredibly fast, saves me hours every week.", persona: "Ops Lead" },

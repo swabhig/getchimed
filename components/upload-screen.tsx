@@ -1,15 +1,16 @@
 "use client"
 
 import { useRef, useState } from "react"
-import { Upload, Link2, FileSpreadsheet, ArrowRight, Check } from "lucide-react"
+import Papa from "papaparse"
+import { Upload, Link2, FileSpreadsheet, ArrowRight, Check, Loader2, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { createClient } from "@/lib/supabase/client"
+import { buildAnalysis, type AnalysisResult, type ResponseRow } from "@/lib/nps-data"
 
 interface UploadScreenProps {
-  onAnalyze: () => void
+  onAnalyze: (data: AnalysisResult) => void
 }
-
-const MOCK_COLUMNS = ["Timestamp", "NPS Score", "What could we improve?", "Role", "Email"]
 
 type MappingKey = "score" | "comment" | "persona"
 
@@ -19,14 +20,14 @@ function ColumnSelect({
   required,
   value,
   onChange,
-  disabled,
+  columns,
 }: {
   id: string
   label: string
   required?: boolean
   value: string
   onChange: (v: string) => void
-  disabled?: boolean
+  columns: string[]
 }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -38,15 +39,13 @@ function ColumnSelect({
         id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        disabled={disabled}
         className={cn(
           "h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-          "disabled:cursor-not-allowed disabled:opacity-50",
         )}
       >
         <option value="">Select a column…</option>
-        {MOCK_COLUMNS.map((c) => (
+        {columns.map((c) => (
           <option key={c} value={c}>
             {c}
           </option>
@@ -61,22 +60,95 @@ export function UploadScreen({ onAnalyze }: UploadScreenProps) {
   const [fileName, setFileName] = useState<string | null>(null)
   const [sheetUrl, setSheetUrl] = useState("")
   const [dragOver, setDragOver] = useState(false)
+  const [columns, setColumns] = useState<string[]>([])
+  const [rawRows, setRawRows] = useState<Record<string, string>[]>([])
   const [mapping, setMapping] = useState<Record<MappingKey, string>>({
     score: "",
     comment: "",
     persona: "",
   })
+  const [status, setStatus] = useState<"idle" | "parsing" | "inserting">("idle")
+  const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const hasData = source === "file" ? !!fileName : sheetUrl.trim().length > 0
-  const canAnalyze = hasData && mapping.score !== "" && mapping.comment !== ""
+  const hasData = columns.length > 0 && rawRows.length > 0
+  const canAnalyze = hasData && mapping.score !== "" && mapping.comment !== "" && status === "idle"
+
+  function parseFile(file: File) {
+    setError(null)
+    setStatus("parsing")
+    setFileName(file.name)
+    Papa.parse<Record<string, string>>(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        const headers = results.meta.fields ?? []
+        const rows = results.data.filter((r) => Object.keys(r).length > 0)
+        setColumns(headers)
+        setRawRows(rows)
+        setMapping({ score: "", comment: "", persona: "" })
+        setStatus("idle")
+        if (rows.length === 0) setError("No rows found in this CSV.")
+      },
+      error: (err) => {
+        setStatus("idle")
+        setError(`Could not parse file: ${err.message}`)
+      },
+    })
+  }
 
   function handleFiles(files: FileList | null) {
-    if (files && files[0]) setFileName(files[0].name)
+    if (files && files[0]) parseFile(files[0])
   }
 
   function setMap(key: MappingKey, v: string) {
     setMapping((m) => ({ ...m, [key]: v }))
+  }
+
+  async function handleAnalyze() {
+    setError(null)
+    setStatus("inserting")
+
+    // Map raw CSV rows to typed response rows using the chosen columns.
+    const rows: ResponseRow[] = rawRows
+      .map((raw, i) => {
+        const rawScore = raw[mapping.score]
+        const score = Number.parseInt(String(rawScore ?? "").trim(), 10)
+        return {
+          id: i + 1,
+          score: Number.isNaN(score) ? -1 : score,
+          comment: (raw[mapping.comment] ?? "").trim(),
+          persona: mapping.persona ? (raw[mapping.persona] ?? "").trim() : "",
+        }
+      })
+      .filter((r) => r.score >= 0)
+
+    if (rows.length === 0) {
+      setStatus("idle")
+      setError("No rows had a valid numeric score in the selected column.")
+      return
+    }
+
+    // Persist to Supabase.
+    const supabase = createClient()
+    const { error: insertError } = await supabase.from("responses").insert(
+      rows.map((r) => ({
+        score: r.score,
+        comment: r.comment,
+        persona: r.persona || null,
+      })),
+    )
+
+    if (insertError) {
+      setStatus("idle")
+      setError(`Failed to save responses: ${insertError.message}`)
+      return
+    }
+
+    // Segment by score and build the analysis for the results screen.
+    const analysis = buildAnalysis(rows)
+    setStatus("idle")
+    onAnalyze(analysis)
   }
 
   return (
@@ -140,13 +212,22 @@ export function UploadScreen({ onAnalyze }: UploadScreenProps) {
             className="sr-only"
             onChange={(e) => handleFiles(e.target.files)}
           />
-          {fileName ? (
+          {status === "parsing" ? (
+            <>
+              <div className="flex size-11 items-center justify-center rounded-full bg-muted">
+                <Loader2 className="size-5 animate-spin text-muted-foreground" />
+              </div>
+              <p className="text-sm font-medium text-foreground">Parsing {fileName}…</p>
+            </>
+          ) : fileName && hasData ? (
             <>
               <div className="flex size-11 items-center justify-center rounded-full bg-promoter-muted">
                 <FileSpreadsheet className="size-5 text-promoter" />
               </div>
               <p className="text-sm font-medium text-foreground">{fileName}</p>
-              <p className="text-xs text-muted-foreground">Click to choose a different file</p>
+              <p className="text-xs text-muted-foreground">
+                {rawRows.length} rows · {columns.length} columns — click to choose a different file
+              </p>
             </>
           ) : (
             <>
@@ -174,7 +255,17 @@ export function UploadScreen({ onAnalyze }: UploadScreenProps) {
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             )}
           />
-          <p className="text-xs text-muted-foreground">Make sure the sheet is shared as “anyone with the link”.</p>
+          <p className="text-xs text-muted-foreground">
+            Google Sheet import is coming soon — upload a CSV export to analyze responses now.
+          </p>
+        </div>
+      )}
+
+      {/* Error */}
+      {error && (
+        <div className="mt-4 flex items-start gap-2 rounded-md border border-detractor/30 bg-detractor-muted px-3 py-2.5 text-sm text-detractor">
+          <AlertCircle className="mt-0.5 size-4 shrink-0" />
+          <span>{error}</span>
         </div>
       )}
 
@@ -192,6 +283,7 @@ export function UploadScreen({ onAnalyze }: UploadScreenProps) {
               required
               value={mapping.score}
               onChange={(v) => setMap("score", v)}
+              columns={columns}
             />
             <ColumnSelect
               id="map-comment"
@@ -199,12 +291,14 @@ export function UploadScreen({ onAnalyze }: UploadScreenProps) {
               required
               value={mapping.comment}
               onChange={(v) => setMap("comment", v)}
+              columns={columns}
             />
             <ColumnSelect
               id="map-persona"
               label="Persona / role"
               value={mapping.persona}
               onChange={(v) => setMap("persona", v)}
+              columns={columns}
             />
           </div>
         </div>
@@ -222,9 +316,18 @@ export function UploadScreen({ onAnalyze }: UploadScreenProps) {
             "Map a score and comment column to continue"
           )}
         </p>
-        <Button size="lg" disabled={!canAnalyze} onClick={onAnalyze}>
-          Analyze
-          <ArrowRight className="size-4" />
+        <Button size="lg" disabled={!canAnalyze} onClick={handleAnalyze}>
+          {status === "inserting" ? (
+            <>
+              <Loader2 className="size-4 animate-spin" />
+              Saving…
+            </>
+          ) : (
+            <>
+              Analyze
+              <ArrowRight className="size-4" />
+            </>
+          )}
         </Button>
       </div>
     </div>
