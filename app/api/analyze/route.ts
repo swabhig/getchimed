@@ -92,7 +92,7 @@ async function callClaude(systemPrompt: string, comments: CommentInput[], apiKey
       method: "POST",
       headers,
       body: JSON.stringify({
-        model: "claude-3-5-sonnet-20241022",
+        model: "claude-opus-4-1",
         max_tokens: 4000,
         system: systemPrompt,
         messages: [{ role: "user", content: JSON.stringify(comments) }],
