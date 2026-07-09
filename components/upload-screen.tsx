@@ -196,15 +196,15 @@ export function UploadScreen({ onAnalyze }: UploadScreenProps) {
       // Metrics stay score-based; themes + flags come straight from the API.
       const analysis = assembleAnalysis(rows, cluster)
       
-      // Call benchmark endpoint
+      // Call benchmark endpoint with the computed NPS score (promoter% - detractor%)
       setStatus("benchmarking")
-      const avgScore = Math.round(rows.reduce((sum, r) => sum + r.score, 0) / rows.length)
+      const npsScore = analysis.metrics.promoter - analysis.metrics.detractor
       try {
         const benchmarkRes = await fetch("/api/benchmark", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            npsScore: avgScore,
+            npsScore: npsScore,
             industry: context.industry,
             businessType: context.businessType,
             model: context.model,
