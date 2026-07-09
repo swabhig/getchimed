@@ -25,7 +25,8 @@ export interface ActionItem {
 export interface ResponseRow {
   id: string
   score: number
-  comment: string
+  main_benefit: string
+  improvement: string
   persona: string
 }
 

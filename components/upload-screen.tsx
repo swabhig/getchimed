@@ -12,7 +12,7 @@ interface UploadScreenProps {
   onAnalyze: (data: AnalysisResult) => void
 }
 
-type MappingKey = "score" | "comment" | "persona"
+type MappingKey = "score" | "main_benefit" | "improvement" | "persona"
 
 function ColumnSelect({
   id,
@@ -64,7 +64,8 @@ export function UploadScreen({ onAnalyze }: UploadScreenProps) {
   const [rawRows, setRawRows] = useState<Record<string, string>[]>([])
   const [mapping, setMapping] = useState<Record<MappingKey, string>>({
     score: "",
-    comment: "",
+    main_benefit: "",
+    improvement: "",
     persona: "",
   })
   const [status, setStatus] = useState<"idle" | "parsing" | "inserting" | "analyzing" | "benchmarking">("idle")
@@ -81,7 +82,8 @@ export function UploadScreen({ onAnalyze }: UploadScreenProps) {
   const canAnalyze =
     hasData &&
     mapping.score !== "" &&
-    mapping.comment !== "" &&
+    mapping.main_benefit !== "" &&
+    mapping.improvement !== "" &&
     context.industry !== "" &&
     status === "idle"
 
@@ -120,14 +122,15 @@ export function UploadScreen({ onAnalyze }: UploadScreenProps) {
     setError(null)
     setStatus("inserting")
 
-    // Map raw CSV rows to score/comment/persona using the chosen columns.
+    // Map raw CSV rows to score/main_benefit/improvement/persona using the chosen columns.
     // No id yet — Supabase assigns the uuid we'll use as rowRef.
     const mapped = rawRows
       .map((raw) => {
         const score = Number.parseInt(String(raw[mapping.score] ?? "").trim(), 10)
         return {
           score: Number.isNaN(score) ? -1 : score,
-          comment: (raw[mapping.comment] ?? "").trim(),
+          main_benefit: (raw[mapping.main_benefit] ?? "").trim(),
+          improvement: (raw[mapping.improvement] ?? "").trim(),
           persona: mapping.persona ? (raw[mapping.persona] ?? "").trim() : "",
         }
       })
@@ -146,11 +149,12 @@ export function UploadScreen({ onAnalyze }: UploadScreenProps) {
       .insert(
         mapped.map((r) => ({
           score: r.score,
-          comment: r.comment,
+          main_benefit: r.main_benefit,
+          improvement: r.improvement,
           persona: r.persona || null,
         })),
       )
-      .select("id, score, comment, persona")
+      .select("id, score, main_benefit, improvement, persona")
 
     if (insertError || !inserted) {
       setStatus("idle")
@@ -162,13 +166,14 @@ export function UploadScreen({ onAnalyze }: UploadScreenProps) {
     const rows: ResponseRow[] = inserted.map((r) => ({
       id: r.id as string,
       score: r.score as number,
-      comment: (r.comment as string) ?? "",
+      main_benefit: (r.main_benefit as string) ?? "",
+      improvement: (r.improvement as string) ?? "",
       persona: (r.persona as string) ?? "",
     }))
 
-    // Segment by score, then send comments (rowRef + comment only) to the clustering API.
+    // Segment by score, then send feedback (rowRef + main_benefit + improvement) to the clustering API.
     const groups = segmentRows(rows)
-    const toComments = (segRows: ResponseRow[]) => segRows.map((r) => ({ rowRef: r.id, comment: r.comment }))
+    const toComments = (segRows: ResponseRow[]) => segRows.map((r) => ({ rowRef: r.id, comment: `${r.main_benefit}${r.improvement ? " " + r.improvement : ""}` }))
 
     setStatus("analyzing")
     try {
@@ -362,9 +367,9 @@ export function UploadScreen({ onAnalyze }: UploadScreenProps) {
         <div className="mt-8 rounded-lg border border-border bg-card p-5">
           <h2 className="text-sm font-medium text-foreground">Map your columns</h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Score and comment are required. Persona is optional and used to segment insights.
+            Score, Main benefit, and Improvement are required. Persona is optional.
           </p>
-          <div className="mt-4 grid gap-4 sm:grid-cols-3">
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <ColumnSelect
               id="map-score"
               label="Score"
@@ -374,11 +379,19 @@ export function UploadScreen({ onAnalyze }: UploadScreenProps) {
               columns={columns}
             />
             <ColumnSelect
-              id="map-comment"
-              label="Comment"
+              id="map-main-benefit"
+              label="Main benefit"
               required
-              value={mapping.comment}
-              onChange={(v) => setMap("comment", v)}
+              value={mapping.main_benefit}
+              onChange={(v) => setMap("main_benefit", v)}
+              columns={columns}
+            />
+            <ColumnSelect
+              id="map-improvement"
+              label="Improvement"
+              required
+              value={mapping.improvement}
+              onChange={(v) => setMap("improvement", v)}
               columns={columns}
             />
             <ColumnSelect
