@@ -171,9 +171,8 @@ export function UploadScreen({ onAnalyze }: UploadScreenProps) {
       persona: (r.persona as string) ?? "",
     }))
 
-    // Segment by score, then send feedback (rowRef + main_benefit + improvement) to the clustering API.
+    // Segment by score, then send structured feedback to the clustering API.
     const groups = segmentRows(rows)
-    const toComments = (segRows: ResponseRow[]) => segRows.map((r) => ({ rowRef: r.id, comment: `${r.main_benefit}${r.improvement ? " " + r.improvement : ""}` }))
 
     setStatus("analyzing")
     try {
@@ -181,9 +180,9 @@ export function UploadScreen({ onAnalyze }: UploadScreenProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          promoterComments: toComments(groups.promoter),
-          passiveComments: toComments(groups.passive),
-          detractorComments: toComments(groups.detractor),
+          promoterMainBenefit: groups.promoter.map((r) => ({ rowRef: r.id, comment: r.main_benefit })),
+          passiveImprovement: groups.passive.map((r) => ({ rowRef: r.id, comment: r.improvement })),
+          detractorRows: groups.detractor.map((r) => ({ rowRef: r.id, mainBenefit: r.main_benefit, improvement: r.improvement })),
         }),
       })
 
