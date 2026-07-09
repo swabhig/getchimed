@@ -1,16 +1,18 @@
 // app/api/analyze/route.ts
 //
-// This is the clustering API route. Paste this file in as-is — ask v0 to
-// "add this exact file, don't modify the logic" since the rules inside
-// (never alter customer text, keep unclustered visible, detractor flag-scan
-// only) are load-bearing and shouldn't be rewritten.
+// Updated version: main_benefit and improvement are separate fields, never merged.
+// - Promoter clustering reads main_benefit only (what to double down on)
+// - Passive clustering reads improvement only (what's blocking conversion)
+// - Detractor flag-scan reads both fields, tagging which field each flag came from
 //
+// Paste this file in as-is — ask v0 to "add this exact file, don't modify the logic."
 // Requires: ANTHROPIC_API_KEY set in your Vercel project's environment variables.
 
 import { NextRequest, NextResponse } from "next/server";
 
 const PROMOTER_SYSTEM_PROMPT = `You are analyzing promoter feedback from an NPS survey (respondents who scored 9-10).
-Your job is to cluster their open-text comments into themes based on shared meaning, not just shared words.
+You are given each respondent's answer to "What is the main benefit you receive from this product?"
+Cluster these answers into themes based on shared meaning, not just shared words — this represents what the company should double down on.
 
 Rules you must follow exactly:
 1. Cluster comments into themes based on meaning, not literal keyword overlap.
@@ -29,14 +31,15 @@ Rules you must follow exactly:
 }`;
 
 const PASSIVE_SYSTEM_PROMPT = `You are analyzing passive feedback from an NPS survey (respondents who scored 7-8).
-These respondents are close to becoming promoters but have blockers. Cluster their comments into themes representing what's holding them back.
+You are given each respondent's answer to "What's one thing we could improve?"
+Cluster these answers into themes based on shared meaning — this represents what's blocking these respondents from becoming promoters.
 
-Follow the same rules as promoter clustering:
-1. Cluster by meaning, not keyword overlap.
-2. Label themes using customers' own language.
-3. Never alter or paraphrase original comment text — only assign labels and row references.
-4. Unclear comments go into "unclustered" with a reason, never force-fit.
-5. Return ONLY valid JSON in this exact shape:
+Rules you must follow exactly:
+1. Cluster comments into themes based on meaning, not literal keyword overlap.
+2. Label each theme using the customers' own language where possible.
+3. Never alter, summarize, paraphrase, or quote back the original comment text — only assign a theme label and row reference.
+4. If a comment doesn't clearly fit any theme, place its row reference in "unclustered" with a short reason. Do not force-fit it.
+5. Return ONLY valid JSON, no preamble, no markdown formatting, matching this exact shape:
 
 {
   "themes": [
@@ -48,7 +51,7 @@ Follow the same rules as promoter clustering:
 }`;
 
 const DETRACTOR_SYSTEM_PROMPT = `You are scanning detractor feedback from an NPS survey (respondents who scored 0-6).
-Do NOT cluster these into themes. Only scan for red flags: bugs, breakage, critical friction, or unresolved support issues.
+Each respondent has two fields: their answer to "main benefit" and their answer to "improvement". Scan BOTH fields for red flags — do NOT cluster into themes.
 
 Flag categories:
 - "bug": mentions of crashes, errors, broken features, glitches, things not working
@@ -57,141 +60,76 @@ Flag categories:
 
 Rules:
 1. Only flag comments that clearly match one of the three categories above. Do not flag general dissatisfaction that isn't one of these specific issues.
-2. Never alter or paraphrase the original comment text — return the row reference and category only, plus the original comment text for the flags panel display.
-3. Return ONLY valid JSON in this exact shape:
+2. Never alter or paraphrase the original comment text — return the row reference, category, which field it came from ("main_benefit" or "improvement"), and the original unaltered text.
+3. A single respondent may produce zero, one, or two flags (one per field) if both fields raise issues.
+4. Return ONLY valid JSON in this exact shape:
 
 {
   "flags": [
-    { "rowRef": "string", "category": "bug" | "friction" | "support", "comment": "original unaltered text" }
+    { "rowRef": "string", "field": "main_benefit" | "improvement", "category": "bug" | "friction" | "support", "comment": "original unaltered text" }
   ]
 }`;
 
-interface CommentInput {
+interface SegmentCommentInput {
   rowRef: string;
   comment: string;
 }
 
-async function callClaude(systemPrompt: string, comments: CommentInput[], apiKey: string, isAiGateway: boolean) {
-    // Use AI Gateway endpoint for dev, direct Anthropic for production
-    const endpoint = isAiGateway
-      ? "https://api.vercel.ai/v1/messages"
-      : "https://api.anthropic.com/v1/messages";
-    
-    const headers = isAiGateway
-      ? {
-          "authorization": `Bearer ${apiKey}`,
-          "content-type": "application/json",
-        }
-      : {
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-          "content-type": "application/json",
-        };
-
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 4000,
-        system: systemPrompt,
-        messages: [{ role: "user", content: JSON.stringify(comments) }],
-      }),
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error("[v0] LLM API error:", { status: response.status, endpoint, body: errText });
-      throw new Error(`LLM API error (${endpoint}): ${response.status} ${errText}`);
-    }
-
-    const data = await response.json();
-    const textBlock = data.content.find((block: any) => block.type === "text");
-
-    if (!textBlock) {
-      throw new Error("No text response from LLM");
-    }
-
-    const cleaned = textBlock.text.replace(/```json|```/g, "").trim();
-    return JSON.parse(cleaned);
+interface DetractorCommentInput {
+  rowRef: string;
+  mainBenefit: string;
+  improvement: string;
 }
 
-function generateDemoAnalysis(
-  promoterComments: CommentInput[],
-  passiveComments: CommentInput[],
-  detractorComments: CommentInput[]
-) {
-  // Demo clustering based on simple keyword groups
-  const output = {
-    themes: [
-      // Promoter themes
-      {
-        label: "Performance & Speed",
-        segment: "promoter" as const,
-        frequency: promoterComments.filter(c => /fast|speed|quick|instant/.test(c.comment.toLowerCase())).length || 1,
-        rowRefs: promoterComments.filter(c => /fast|speed|quick|instant/.test(c.comment.toLowerCase())).map(c => c.rowRef) || promoterComments.slice(0, 1).map(c => c.rowRef),
-      },
-      {
-        label: "Ease of Use",
-        segment: "promoter" as const,
-        frequency: promoterComments.filter(c => /easy|intuitive|simple|smooth/.test(c.comment.toLowerCase())).length || 1,
-        rowRefs: promoterComments.filter(c => /easy|intuitive|simple|smooth/.test(c.comment.toLowerCase())).map(c => c.rowRef) || promoterComments.slice(0, 1).map(c => c.rowRef),
-      },
-      // Passive themes
-      {
-        label: "Pricing Clarity",
-        segment: "passive" as const,
-        frequency: passiveComments.filter(c => /price|cost|pricing|expensive/.test(c.comment.toLowerCase())).length || 1,
-        rowRefs: passiveComments.filter(c => /price|cost|pricing|expensive/.test(c.comment.toLowerCase())).map(c => c.rowRef) || passiveComments.slice(0, 1).map(c => c.rowRef),
-      },
-      {
-        label: "Onboarding Experience",
-        segment: "passive" as const,
-        frequency: passiveComments.filter(c => /onboard|setup|learn|guide/.test(c.comment.toLowerCase())).length || 1,
-        rowRefs: passiveComments.filter(c => /onboard|setup|learn|guide/.test(c.comment.toLowerCase())).map(c => c.rowRef) || passiveComments.slice(0, 1).map(c => c.rowRef),
-      },
-    ],
-    flags: detractorComments.map(c => {
-      let category: "bug" | "friction" | "support" = "friction";
-      if (/crash|error|break|bug|glitch/.test(c.comment.toLowerCase())) category = "bug";
-      else if (/support|response|help|ticket/.test(c.comment.toLowerCase())) category = "support";
-      return { rowRef: c.rowRef, category, comment: c.comment };
+async function callClaude(systemPrompt: string, payload: unknown) {
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": process.env.ANTHROPIC_API_KEY!,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-6",
+      max_tokens: 4000,
+      system: systemPrompt,
+      messages: [{ role: "user", content: JSON.stringify(payload) }],
     }),
-    unclustered: [],
-  };
-  
-  return NextResponse.json(output);
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Anthropic API error: ${response.status} ${errText}`);
+  }
+
+  const data = await response.json();
+  const textBlock = data.content.find((block: any) => block.type === "text");
+
+  if (!textBlock) {
+    throw new Error("No text response from LLM");
+  }
+
+  const cleaned = textBlock.text.replace(/```json|```/g, "").trim();
+  return JSON.parse(cleaned);
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const {
-      promoterComments,
-      passiveComments,
-      detractorComments,
+      promoterMainBenefit,
+      passiveImprovement,
+      detractorRows,
     }: {
-      promoterComments: CommentInput[];
-      passiveComments: CommentInput[];
-      detractorComments: CommentInput[];
+      promoterMainBenefit: SegmentCommentInput[]; // { rowRef, comment: main_benefit text }
+      passiveImprovement: SegmentCommentInput[]; // { rowRef, comment: improvement text }
+      detractorRows: DetractorCommentInput[]; // { rowRef, mainBenefit, improvement }
     } = body;
 
-    // Use API if key is available
-    const anthropicKey = process.env.ANTHROPIC_API_KEY;
-    const aiGatewayKey = process.env.AI_GATEWAY_API_KEY;
-    const apiKey = anthropicKey || aiGatewayKey;
-    const isAiGateway = !anthropicKey && !!aiGatewayKey;
-    
-    // If no key or dev mode (no ANTHROPIC_API_KEY), generate synthetic themes for demo
-    if (!apiKey || (!anthropicKey && process.env.NODE_ENV !== "production")) {
-      console.warn("[v0] Using demo/fallback clustering (no production API key configured)");
-      return generateDemoAnalysis(promoterComments, passiveComments, detractorComments);
-    }
-
     const [promoterResult, passiveResult, detractorResult] = await Promise.all([
-      callClaude(PROMOTER_SYSTEM_PROMPT, promoterComments, apiKey, isAiGateway),
-      callClaude(PASSIVE_SYSTEM_PROMPT, passiveComments, apiKey, isAiGateway),
-      callClaude(DETRACTOR_SYSTEM_PROMPT, detractorComments, apiKey, isAiGateway),
+      callClaude(PROMOTER_SYSTEM_PROMPT, promoterMainBenefit),
+      callClaude(PASSIVE_SYSTEM_PROMPT, passiveImprovement),
+      callClaude(DETRACTOR_SYSTEM_PROMPT, detractorRows),
     ]);
 
     const attachMetadata = (result: any, segment: "promoter" | "passive") =>
