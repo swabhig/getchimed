@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ArrowRight, X, Bug, Zap, LifeBuoy, TrendingUp, Wrench, AlertCircle } from "lucide-react"
+import { ArrowRight, X, Bug, Zap, LifeBuoy, TrendingUp, Wrench, AlertCircle, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { WordCloud } from "@/components/word-cloud"
@@ -39,6 +39,21 @@ function getBenchmarkBadgeColor(sentiment: BenchmarkResponse["sentiment"]) {
     default:
       return "bg-muted text-muted-foreground"
   }
+}
+
+function SectionHeader({ title, tooltip }: { title: string; tooltip: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="size-2 rounded-full bg-promoter" />
+      <h3 className="text-sm font-medium text-foreground">{title}</h3>
+      <div className="group relative cursor-help">
+        <Info className="size-3.5 text-muted-foreground hover:text-foreground" />
+        <div className="pointer-events-none absolute left-0 top-full mt-1 hidden whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-xs text-white shadow-lg group-hover:block">
+          {tooltip}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export function ResultsScreen({ data, onExport, onReset }: ResultsScreenProps) {
@@ -121,52 +136,204 @@ export function ResultsScreen({ data, onExport, onReset }: ResultsScreenProps) {
         ))}
       </div>
 
-      {/* Word clouds */}
-      <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-        <WordCloud
-          title="Promoter themes"
-          segment="promoter"
-          themes={promoterThemes}
-          activeLabel={activeTheme?.segment === "promoter" ? activeTheme.label : null}
-          onSelect={handleSelect}
-        />
-        <WordCloud
-          title="Passive themes"
-          segment="passive"
-          themes={passiveThemes}
-          activeLabel={activeTheme?.segment === "passive" ? activeTheme.label : null}
-          onSelect={handleSelect}
-        />
-      </div>
-
-      {/* Flags */}
-      <section className="mt-6 rounded-lg border border-border bg-card p-5" aria-label="Detractor flags">
-        <div className="mb-4 flex items-center gap-2">
-          <span className="size-2 rounded-full bg-detractor" />
-          <h3 className="text-sm font-medium text-foreground">Flags — detractor comments</h3>
+      {/* Word clouds - collapsible, expanded by default */}
+      <details className="mt-6 group" open>
+        <summary className="flex cursor-pointer select-none items-center gap-2 rounded-lg border border-border bg-card p-4 hover:bg-muted/50">
+          <div className="flex items-center gap-2 flex-1">
+            <span className="size-2 rounded-full bg-promoter" />
+            <h3 className="text-sm font-medium text-foreground">Word clouds</h3>
+            <div className="group/info relative cursor-help">
+              <Info className="size-3.5 text-muted-foreground hover:text-foreground" />
+              <div className="pointer-events-none absolute left-0 top-full mt-1 hidden whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-xs text-white shadow-lg group-hover/info:block">
+                Theme frequency across promoter and passive feedback.
+              </div>
+            </div>
+          </div>
+          <span className="text-muted-foreground transition-transform group-open:rotate-180">▼</span>
+        </summary>
+        <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
+          <WordCloud
+            title="Promoter themes"
+            segment="promoter"
+            themes={promoterThemes}
+            activeLabel={activeTheme?.segment === "promoter" ? activeTheme.label : null}
+            onSelect={handleSelect}
+          />
+          <WordCloud
+            title="Passive themes"
+            segment="passive"
+            themes={passiveThemes}
+            activeLabel={activeTheme?.segment === "passive" ? activeTheme.label : null}
+            onSelect={handleSelect}
+          />
         </div>
-        <ul className="flex flex-col divide-y divide-border">
-          {data.flags.map((flag) => {
-            const meta = flagMeta[flag.category]
-            const Icon = meta.icon
-            return (
-              <li key={flag.rowRef} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                <span
-                  className={cn(
-                    "inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium",
-                    meta.className,
-                  )}
-                >
-                  <Icon className="size-3" />
-                  {meta.label}
-                </span>
-                <p className="text-sm text-foreground">{flag.comment}</p>
-                <span className="ml-auto shrink-0 font-mono text-xs text-muted-foreground">#{flag.rowRef}</span>
-              </li>
-            )
-          })}
-        </ul>
-      </section>
+      </details>
+
+      {/* Responses table - collapsible, expanded by default */}
+      <details className="mt-6 group" open>
+        <summary className="flex cursor-pointer select-none items-center gap-2 rounded-lg border border-border bg-card p-4 hover:bg-muted/50">
+          <div className="flex items-center gap-2 flex-1">
+            <span className="size-2 rounded-full bg-promoter" />
+            <h3 className="text-sm font-medium text-foreground">
+              Responses <span className="text-muted-foreground">({visibleRows.length})</span>
+            </h3>
+            <div className="group/info relative cursor-help">
+              <Info className="size-3.5 text-muted-foreground hover:text-foreground" />
+              <div className="pointer-events-none absolute left-0 top-full mt-1 hidden whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-xs text-white shadow-lg group-hover/info:block">
+                Every survey response — filters when you click a word or fix.
+              </div>
+            </div>
+          </div>
+          <span className="text-muted-foreground transition-transform group-open:rotate-180">▼</span>
+        </summary>
+        <div className="mt-3">
+          {activeTheme && (
+            <button
+              type="button"
+              onClick={() => setActiveTheme(null)}
+              className="mb-4 inline-flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted/70"
+            >
+              Filtered by "{activeTheme.label}"
+              <X className="size-3.5" />
+            </button>
+          )}
+          <div className="overflow-x-auto rounded-lg border border-border">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-xs text-muted-foreground bg-muted/50">
+                  <th className="w-16 px-4 py-2.5 font-medium">Score</th>
+                  <th className="px-4 py-2.5 font-medium">Main benefit</th>
+                  <th className="px-4 py-2.5 font-medium">Improvement</th>
+                  <th className="hidden w-32 px-4 py-2.5 font-medium sm:table-cell">Persona</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleRows.map((row) => (
+                  <tr key={row.id} className="border-b border-border last:border-0">
+                    <td className="px-4 py-2.5">
+                      <span
+                        className={cn(
+                          "inline-flex size-7 items-center justify-center rounded-md text-xs font-semibold tabular-nums",
+                          row.score >= 9
+                            ? "bg-promoter-muted text-promoter"
+                            : row.score >= 7
+                              ? "bg-passive-muted text-passive"
+                              : "bg-detractor-muted text-detractor",
+                        )}
+                      >
+                        {row.score}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5 text-foreground">{row.main_benefit}</td>
+                    <td className="px-4 py-2.5 text-foreground">{row.improvement}</td>
+                    <td className="hidden px-4 py-2.5 text-muted-foreground sm:table-cell">{row.persona}</td>
+                  </tr>
+                ))}
+                {visibleRows.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                      No responses match this theme.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </details>
+
+      {/* Fixes by team - collapsible, expanded by default */}
+      <details className="mt-6 group" open>
+        <summary className="flex cursor-pointer select-none items-center gap-2 rounded-lg border border-border bg-card p-4 hover:bg-muted/50">
+          <div className="flex items-center gap-2 flex-1">
+            <span className="size-2 rounded-full bg-promoter" />
+            <h3 className="text-sm font-medium text-foreground">Fixes by team</h3>
+            <div className="group/info relative cursor-help">
+              <Info className="size-3.5 text-muted-foreground hover:text-foreground" />
+              <div className="pointer-events-none absolute left-0 top-full mt-1 hidden whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-xs text-white shadow-lg group-hover/info:block">
+                Prioritized actions per team, ranked by impact.
+              </div>
+            </div>
+          </div>
+          <span className="text-muted-foreground transition-transform group-open:rotate-180">▼</span>
+        </summary>
+        <div className="mt-3 overflow-x-auto rounded-lg border border-border">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border text-left text-xs text-muted-foreground bg-muted/50">
+                <th className="px-4 py-2.5 font-medium">Theme</th>
+                <th className="px-4 py-2.5 font-medium">Category</th>
+                <th className="px-4 py-2.5 font-medium">Team</th>
+                <th className="w-28 px-4 py-2.5 text-right font-medium">Mentions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.actionList.map((item) => {
+                const isDoubleDown = item.category === "double-down"
+                const Icon = isDoubleDown ? TrendingUp : Wrench
+                return (
+                  <tr key={item.theme} className="border-b border-border last:border-0">
+                    <td className="px-4 py-3 font-medium text-foreground capitalize">{item.theme}</td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={cn(
+                          "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium",
+                          isDoubleDown ? "bg-promoter-muted text-promoter" : "bg-passive-muted text-passive",
+                        )}
+                      >
+                        <Icon className="size-3" />
+                        {isDoubleDown ? "Double down" : "Fix blocker"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">{item.team}</td>
+                    <td className="px-4 py-3 text-right font-mono tabular-nums text-foreground">{item.mentions}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      </details>
+
+      {/* Detractor flags - collapsible, collapsed by default */}
+      <details className="mt-6 group">
+        <summary className="flex cursor-pointer select-none items-center gap-2 rounded-lg border border-border bg-card p-4 hover:bg-muted/50">
+          <div className="flex items-center gap-2 flex-1">
+            <span className="size-2 rounded-full bg-detractor" />
+            <h3 className="text-sm font-medium text-foreground">Detractor flags</h3>
+            <div className="group/info relative cursor-help">
+              <Info className="size-3.5 text-muted-foreground hover:text-foreground" />
+              <div className="pointer-events-none absolute left-0 top-full mt-1 hidden whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-xs text-white shadow-lg group-hover/info:block">
+                Critical issues reported by detractors, categorized by type.
+              </div>
+            </div>
+          </div>
+          <span className="text-muted-foreground transition-transform group-open:rotate-180">▼</span>
+        </summary>
+        <div className="mt-3 rounded-lg border border-border bg-card p-4">
+          <ul className="flex flex-col divide-y divide-border">
+            {data.flags.map((flag) => {
+              const meta = flagMeta[flag.category]
+              const Icon = meta.icon
+              return (
+                <li key={flag.rowRef} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                  <span
+                    className={cn(
+                      "inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium",
+                      meta.className,
+                    )}
+                  >
+                    <Icon className="size-3" />
+                    {meta.label}
+                  </span>
+                  <p className="text-sm text-foreground">{flag.comment}</p>
+                  <span className="ml-auto shrink-0 font-mono text-xs text-muted-foreground">#{flag.rowRef}</span>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      </details>
 
       {/* Responses table */}
       <section className="mt-6 rounded-lg border border-border bg-card" aria-label="Responses">
