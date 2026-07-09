@@ -17,9 +17,10 @@ Cluster these answers into themes based on shared meaning, not just shared words
 Rules you must follow exactly:
 1. Cluster comments into themes based on meaning, not literal keyword overlap.
 2. Label each theme using the customers' own language where possible — not generic product jargon.
-3. Never alter, summarize, paraphrase, or quote back the original comment text in your output. Only assign a theme label and the row reference.
-4. If a comment doesn't clearly fit any theme, place its row reference in "unclustered" with a short reason. Do not force-fit it.
-5. Return ONLY valid JSON, no preamble, no markdown formatting, matching this exact shape:
+3. Theme labels must be short — 1 to 4 words maximum. Never use full sentences or verbatim comment text as labels.
+4. Never alter, summarize, paraphrase, or quote back the original comment text in your output. Only assign a theme label and the row reference.
+5. If a comment doesn't clearly fit any theme, place its row reference in "unclustered" with a short reason. Do not force-fit it.
+6. Return ONLY valid JSON, no preamble, no markdown formatting, matching this exact shape:
 
 {
   "themes": [
@@ -37,9 +38,10 @@ Cluster these answers into themes based on shared meaning — this represents wh
 Rules you must follow exactly:
 1. Cluster comments into themes based on meaning, not literal keyword overlap.
 2. Label each theme using the customers' own language where possible.
-3. Never alter, summarize, paraphrase, or quote back the original comment text — only assign a theme label and row reference.
-4. If a comment doesn't clearly fit any theme, place its row reference in "unclustered" with a short reason. Do not force-fit it.
-5. Return ONLY valid JSON, no preamble, no markdown formatting, matching this exact shape:
+3. Theme labels must be short — 1 to 4 words maximum. Never use full sentences or verbatim comment text as labels.
+4. Never alter, summarize, paraphrase, or quote back the original comment text — only assign a theme label and row reference.
+5. If a comment doesn't clearly fit any theme, place its row reference in "unclustered" with a short reason. Do not force-fit it.
+6. Return ONLY valid JSON, no preamble, no markdown formatting, matching this exact shape:
 
 {
   "themes": [

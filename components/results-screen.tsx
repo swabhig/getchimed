@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { WordCloud } from "@/components/word-cloud"
 import type { AnalysisResult, FlagCategory, Theme, BenchmarkResponse } from "@/lib/nps-data"
+import { ExternalLink } from "lucide-react"
 
 interface ResultsScreenProps {
   data: AnalysisResult
@@ -59,32 +60,41 @@ export function ResultsScreen({ data, onExport, onReset }: ResultsScreenProps) {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
-      <header className="mb-10 flex flex-wrap items-end justify-between gap-6">
+      <header className="mb-10 flex flex-col items-center justify-center gap-6 text-center">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground text-balance">Analysis results</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Based on {data.responses.length} responses. Click any theme to see the comments behind it.
           </p>
+        </div>
+        
+        {/* NPS Hero with Benchmark Badge */}
+        <div className="flex flex-col items-center">
+          <p className="text-xs font-medium tracking-widest uppercase text-muted-foreground">Your NPS Score</p>
+          <p className="mt-2 text-6xl font-bold tracking-tight text-foreground">{npsScore}</p>
           
-          {/* NPS Hero with Benchmark Badge */}
-          <div className="mt-6 flex items-end gap-6">
-            <div>
-              <p className="text-xs font-medium tracking-widest uppercase text-muted-foreground">Your NPS Score</p>
-              <p className="mt-2 text-6xl font-bold tracking-tight text-foreground">{npsScore}</p>
-              
-              {/* Benchmark badge below score */}
-              {data.benchmark && (
-                <div className="mt-4 flex flex-col gap-1.5">
-                  <div className={cn("inline-flex w-fit rounded-full px-3 py-1 text-xs font-semibold", getBenchmarkBadgeColor(data.benchmark.sentiment))}>
-                    {data.benchmark.remark}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {data.benchmark.source}
-                  </p>
-                </div>
-              )}
+          {/* Benchmark badge below score */}
+          {data.benchmark && (
+            <div className="mt-5 flex flex-col items-center gap-2">
+              <div className={cn("rounded-full px-3 py-1 text-xs font-semibold", getBenchmarkBadgeColor(data.benchmark.sentiment))}>
+                {data.benchmark.remark}
+              </div>
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <span>{data.benchmark.source}</span>
+                {data.benchmark.sourceUrl && (
+                  <a
+                    href={data.benchmark.sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-1 inline-flex items-center gap-0.5 text-promoter hover:underline"
+                  >
+                    Learn more
+                    <ExternalLink className="size-2.5" />
+                  </a>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={onReset}>

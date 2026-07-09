@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useRef } from "react"
 import { cn } from "@/lib/utils"
 import type { Segment, Theme } from "@/lib/nps-data"
 
@@ -11,11 +12,16 @@ interface WordCloudProps {
   onSelect: (theme: Theme) => void
 }
 
-// Map a frequency to a font size, relative to the panel's min/max.
-function sizeFor(freq: number, min: number, max: number) {
-  if (max === min) return 1.4
-  const t = (freq - min) / (max - min)
-  return 0.9 + t * 1.7 // rem
+declare global {
+  interface Window {
+    WordCloud?: any
+  }
+}
+
+const segmentColors: Record<Segment, string[]> = {
+  promoter: ["#16a34a", "#22c55e", "#4ade80", "#86efac"],
+  passive: ["#ca8a04", "#eab308", "#facc15", "#fde047"],
+  detractor: ["#dc2626", "#ef4444", "#f87171", "#fca5a5"],
 }
 
 const segmentText: Record<Segment, string> = {
@@ -24,56 +30,110 @@ const segmentText: Record<Segment, string> = {
   detractor: "text-detractor",
 }
 
-const segmentActive: Record<Segment, string> = {
-  promoter: "bg-promoter text-promoter-foreground",
-  passive: "bg-passive text-passive-foreground",
-  detractor: "bg-detractor text-detractor-foreground",
-}
-
 export function WordCloud({ title, segment, themes, activeLabel, onSelect }: WordCloudProps) {
-  const freqs = themes.map((t) => t.frequency)
-  const min = Math.min(...freqs)
-  const max = Math.max(...freqs)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
-  // Interleave big/small so large words distribute across the cloud (organic packing).
-  const sorted = [...themes].sort((a, b) => b.frequency - a.frequency)
-  const arranged: Theme[] = []
-  let head = 0
-  let tail = sorted.length - 1
-  let takeHead = true
-  while (head <= tail) {
-    if (takeHead) arranged.push(sorted[head++])
-    else arranged.push(sorted[tail--])
-    takeHead = !takeHead
+  useEffect(() => {
+    // Load wordcloud2.js from CDN
+    if (window.WordCloud) {
+      renderCloud()
+      return
+    }
+
+    const script = document.createElement("script")
+    script.src = "https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.0.6/wordcloud2.min.js"
+    script.async = true
+    script.onload = () => {
+      renderCloud()
+    }
+    document.head.appendChild(script)
+
+    return () => {
+      document.head.removeChild(script)
+    }
+  }, [themes, activeLabel])
+
+  function renderCloud() {
+    if (!canvasRef.current || !window.WordCloud || themes.length === 0) return
+
+    const colors = segmentColors[segment]
+    const minFreq = Math.min(...themes.map((t) => t.frequency))
+    const maxFreq = Math.max(...themes.map((t) => t.frequency))
+
+    // Prepare data for wordcloud2: [word, frequency] pairs
+    const data = themes.map((theme) => {
+      const isActive = activeLabel === theme.label
+      // Scale frequency for sizing
+      const scaledFreq = ((theme.frequency - minFreq) / (maxFreq - minFreq)) * 100 + 10
+      return [theme.label, isActive ? scaledFreq * 1.5 : scaledFreq, theme]
+    })
+
+    try {
+      window.WordCloud([canvasRef.current], {
+        list: data,
+        gridSize: 8,
+        maxRotation: Math.PI / 180, // 1 degree max rotation
+        rotateRatio: 0.35,
+        rotationSteps: 2,
+        fontFamily: "system-ui, -apple-system, sans-serif",
+        fontWeight: "600",
+        color: (word: string, weight: number) => {
+          const idx = Math.floor((Math.random() * colors.length))
+          return colors[idx]
+        },
+        click: (item: any) => {
+          const theme = themes.find((t) => t.label === item[0])
+          if (theme) onSelect(theme)
+        },
+      })
+    } catch (err) {
+      console.error("WordCloud2 rendering error:", err)
+    }
+  }
+
+  if (themes.length === 0) {
+    return (
+      <section
+        className="rounded-lg border border-border bg-card p-5"
+        aria-label={title}
+      >
+        <div className="mb-4 flex items-center gap-2">
+          <span
+            className={cn(
+              "size-2 rounded-full",
+              segment === "promoter" ? "bg-promoter" : segment === "passive" ? "bg-passive" : "bg-detractor"
+            )}
+          />
+          <h3 className="text-sm font-medium text-foreground">{title}</h3>
+        </div>
+        <p className="text-xs text-muted-foreground">No themes available.</p>
+      </section>
+    )
   }
 
   return (
-    <section className="rounded-lg border border-border bg-card p-5" aria-label={title}>
+    <section
+      ref={containerRef}
+      className="rounded-lg border border-border bg-card p-5"
+      aria-label={title}
+    >
       <div className="mb-4 flex items-center gap-2">
-        <span className={cn("size-2 rounded-full", segment === "promoter" ? "bg-promoter" : "bg-passive")} />
+        <span
+          className={cn(
+            "size-2 rounded-full",
+            segment === "promoter" ? "bg-promoter" : segment === "passive" ? "bg-passive" : "bg-detractor"
+          )}
+        />
         <h3 className="text-sm font-medium text-foreground">{title}</h3>
       </div>
-      <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 py-2">
-        {arranged.map((theme) => {
-          const isActive = activeLabel === theme.label
-          return (
-            <button
-              key={theme.label}
-              type="button"
-              onClick={() => onSelect(theme)}
-              style={{ fontSize: `${sizeFor(theme.frequency, min, max)}rem` }}
-              className={cn(
-                "rounded-md px-2 py-0.5 font-semibold leading-tight transition-colors hover:opacity-70",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                isActive ? segmentActive[segment] : segmentText[segment],
-              )}
-              title={`${theme.frequency} mentions`}
-            >
-              {theme.label}
-            </button>
-          )
-        })}
-      </div>
+      <canvas
+        ref={canvasRef}
+        width={400}
+        height={300}
+        className="mx-auto block"
+        style={{ cursor: "pointer" }}
+      />
     </section>
   )
 }

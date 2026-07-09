@@ -16,11 +16,13 @@ Rules you must follow exactly:
 2. Never invent a benchmark number. If you cannot find a credible current benchmark, say so honestly in the remark instead of guessing.
 3. Write a short remark, 1-2 sentences, stating where the given NPS score falls relative to the benchmark you found.
 4. Classify the result into one of these sentiment buckets based on where the score falls relative to the benchmark: "needs-attention" (below 0, or well below benchmark), "below-benchmark", "at-benchmark", "above-benchmark", "excellent" (far above benchmark, e.g. Bain & Company's "world class" tier).
-5. Return ONLY valid JSON, no preamble, no markdown formatting, matching this exact shape:
+5. Include the actual URL of the benchmark page you used as the source, so users can verify it themselves.
+6. Return ONLY valid JSON, no preamble, no markdown formatting, matching this exact shape:
 
 {
   "remark": "string",
   "source": "string, name of the benchmark source used",
+  "sourceUrl": "string, the actual URL of the benchmark page",
   "sentiment": "needs-attention" | "below-benchmark" | "at-benchmark" | "above-benchmark" | "excellent"
 }`;
 

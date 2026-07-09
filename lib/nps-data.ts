@@ -49,9 +49,10 @@ export interface BenchmarkContext {
 }
 
 export interface BenchmarkResponse {
-  npsScore: number
+  npsScore?: number
   remark: string
   source: string
+  sourceUrl?: string
   sentiment: "pending" | "needs-attention" | "below-benchmark" | "at-benchmark" | "above-benchmark" | "excellent"
 }
 
