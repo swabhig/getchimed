@@ -108,9 +108,24 @@ export async function POST(req: NextRequest) {
   try {
     // Validate API key is set and has reasonable format
     const apiKey = process.env.ANTHROPIC_API_KEY;
+    const allKeys = Object.keys(process.env).filter(k => k.toUpperCase().includes("ANTHROPIC") || k.toUpperCase().includes("API"));
+    
+    console.log("[v0] Environment check:", {
+      apiKeyDefined: !!apiKey,
+      apiKeyLength: apiKey?.length,
+      allRelevantKeys: allKeys,
+      processEnvSize: Object.keys(process.env).length
+    });
+    
     if (!apiKey) {
       return NextResponse.json(
-        { error: "ANTHROPIC_API_KEY environment variable is not set" },
+        { 
+          error: "ANTHROPIC_API_KEY environment variable is not set",
+          debug: {
+            availableEnvVars: allKeys,
+            hint: "Make sure ANTHROPIC_API_KEY is added in project Settings → Vars, then fully reload/restart the app"
+          }
+        },
         { status: 500 }
       );
     }
