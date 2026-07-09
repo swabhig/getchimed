@@ -90,24 +90,23 @@ export function ResultsScreen({ data, onExport, onReset }: ResultsScreenProps) {
           
           {/* Benchmark badge below score */}
           {data.benchmark && (
-            <div className="mt-5 flex flex-col items-center gap-2">
-              <div className={cn("rounded-full px-3 py-1 text-xs font-semibold", getBenchmarkBadgeColor(data.benchmark.sentiment))}>
-                {data.benchmark.remark}
-              </div>
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <span>{data.benchmark.source}</span>
+            <div className="mt-5 flex flex-col items-center gap-1">
+              <div className="flex items-center gap-1.5">
+                <div className={cn("rounded-full px-3 py-1 text-xs font-semibold", getBenchmarkBadgeColor(data.benchmark.sentiment))}>
+                  {data.benchmark.remark}
+                </div>
                 {data.benchmark.sourceUrl && (
                   <a
                     href={data.benchmark.sourceUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="ml-1 inline-flex items-center gap-0.5 text-promoter hover:underline"
+                    className="text-muted-foreground hover:text-foreground"
                   >
-                    Learn more
-                    <ExternalLink className="size-2.5" />
+                    <ExternalLink className="size-3.5" />
                   </a>
                 )}
               </div>
+              <p className="text-xs text-muted-foreground">{data.benchmark.source}</p>
             </div>
           )}
         </div>
@@ -335,66 +334,7 @@ export function ResultsScreen({ data, onExport, onReset }: ResultsScreenProps) {
         </div>
       </details>
 
-      {/* Responses table */}
-      <section className="mt-6 rounded-lg border border-border bg-card" aria-label="Responses">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border p-4">
-          <h3 className="text-sm font-medium text-foreground">
-            Responses <span className="text-muted-foreground">({visibleRows.length})</span>
-          </h3>
-          {activeTheme && (
-            <button
-              type="button"
-              onClick={() => setActiveTheme(null)}
-              className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted/70"
-            >
-              Filtered by “{activeTheme.label}”
-              <X className="size-3.5" />
-            </button>
-          )}
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border text-left text-xs text-muted-foreground">
-                <th className="w-16 px-4 py-2.5 font-medium">Score</th>
-                <th className="px-4 py-2.5 font-medium">Main benefit</th>
-                <th className="px-4 py-2.5 font-medium">Improvement</th>
-                <th className="hidden w-32 px-4 py-2.5 font-medium sm:table-cell">Persona</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibleRows.map((row) => (
-                <tr key={row.id} className="border-b border-border last:border-0">
-                  <td className="px-4 py-2.5">
-                    <span
-                      className={cn(
-                        "inline-flex size-7 items-center justify-center rounded-md text-xs font-semibold tabular-nums",
-                        row.score >= 9
-                          ? "bg-promoter-muted text-promoter"
-                          : row.score >= 7
-                            ? "bg-passive-muted text-passive"
-                            : "bg-detractor-muted text-detractor",
-                      )}
-                    >
-                      {row.score}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2.5 text-foreground">{row.main_benefit}</td>
-                  <td className="px-4 py-2.5 text-foreground">{row.improvement}</td>
-                  <td className="hidden px-4 py-2.5 text-muted-foreground sm:table-cell">{row.persona}</td>
-                </tr>
-              ))}
-              {visibleRows.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-sm text-muted-foreground">
-                    No responses match this theme.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
+
 
       {/* Action list */}
       <section className="mt-6 rounded-lg border border-border bg-card" aria-label="Action list">
