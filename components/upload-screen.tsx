@@ -6,7 +6,7 @@ import { Upload, Link2, FileSpreadsheet, ArrowRight, Check, Loader2, AlertCircle
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/client"
-import { buildAnalysis, type AnalysisResult, type ResponseRow } from "@/lib/nps-data"
+import { assembleAnalysis, segmentRows, type AnalysisResult, type ClusterResult, type ResponseRow } from "@/lib/nps-data"
 
 interface UploadScreenProps {
   onAnalyze: (data: AnalysisResult) => void
@@ -67,7 +67,7 @@ export function UploadScreen({ onAnalyze }: UploadScreenProps) {
     comment: "",
     persona: "",
   })
-  const [status, setStatus] = useState<"idle" | "parsing" | "inserting">("idle")
+  const [status, setStatus] = useState<"idle" | "parsing" | "inserting" | "analyzing">("idle")
   const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -109,13 +109,12 @@ export function UploadScreen({ onAnalyze }: UploadScreenProps) {
     setError(null)
     setStatus("inserting")
 
-    // Map raw CSV rows to typed response rows using the chosen columns.
-    const rows: ResponseRow[] = rawRows
-      .map((raw, i) => {
-        const rawScore = raw[mapping.score]
-        const score = Number.parseInt(String(rawScore ?? "").trim(), 10)
+    // Map raw CSV rows to score/comment/persona using the chosen columns.
+    // No id yet — Supabase assigns the uuid we'll use as rowRef.
+    const mapped = rawRows
+      .map((raw) => {
+        const score = Number.parseInt(String(raw[mapping.score] ?? "").trim(), 10)
         return {
-          id: i + 1,
           score: Number.isNaN(score) ? -1 : score,
           comment: (raw[mapping.comment] ?? "").trim(),
           persona: mapping.persona ? (raw[mapping.persona] ?? "").trim() : "",
@@ -123,32 +122,70 @@ export function UploadScreen({ onAnalyze }: UploadScreenProps) {
       })
       .filter((r) => r.score >= 0)
 
-    if (rows.length === 0) {
+    if (mapped.length === 0) {
       setStatus("idle")
       setError("No rows had a valid numeric score in the selected column.")
       return
     }
 
-    // Persist to Supabase.
+    // Persist to Supabase and read back the generated uuids.
     const supabase = createClient()
-    const { error: insertError } = await supabase.from("responses").insert(
-      rows.map((r) => ({
-        score: r.score,
-        comment: r.comment,
-        persona: r.persona || null,
-      })),
-    )
+    const { data: inserted, error: insertError } = await supabase
+      .from("responses")
+      .insert(
+        mapped.map((r) => ({
+          score: r.score,
+          comment: r.comment,
+          persona: r.persona || null,
+        })),
+      )
+      .select("id, score, comment, persona")
 
-    if (insertError) {
+    if (insertError || !inserted) {
       setStatus("idle")
-      setError(`Failed to save responses: ${insertError.message}`)
+      setError(`Failed to save responses: ${insertError?.message ?? "unknown error"}`)
       return
     }
 
-    // Segment by score and build the analysis for the results screen.
-    const analysis = buildAnalysis(rows)
-    setStatus("idle")
-    onAnalyze(analysis)
+    // Rows now carry their Supabase uuid as the id / rowRef.
+    const rows: ResponseRow[] = inserted.map((r) => ({
+      id: r.id as string,
+      score: r.score as number,
+      comment: (r.comment as string) ?? "",
+      persona: (r.persona as string) ?? "",
+    }))
+
+    // Segment by score, then send comments (rowRef + comment only) to the clustering API.
+    const groups = segmentRows(rows)
+    const toComments = (segRows: ResponseRow[]) => segRows.map((r) => ({ rowRef: r.id, comment: r.comment }))
+
+    setStatus("analyzing")
+    try {
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          promoterComments: toComments(groups.promoter),
+          passiveComments: toComments(groups.passive),
+          detractorComments: toComments(groups.detractor),
+        }),
+      })
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        throw new Error(body?.error ?? `Analysis failed (${res.status})`)
+      }
+
+      const cluster = (await res.json()) as ClusterResult
+
+      // Metrics stay score-based; themes + flags come straight from the API.
+      const analysis = assembleAnalysis(rows, cluster)
+      setStatus("idle")
+      onAnalyze(analysis)
+    } catch (err) {
+      setStatus("idle")
+      setError(err instanceof Error ? err.message : "Analysis failed. Please try again.")
+    }
   }
 
   return (
@@ -321,6 +358,11 @@ export function UploadScreen({ onAnalyze }: UploadScreenProps) {
             <>
               <Loader2 className="size-4 animate-spin" />
               Saving…
+            </>
+          ) : status === "analyzing" ? (
+            <>
+              <Loader2 className="size-4 animate-spin" />
+              Analyzing…
             </>
           ) : (
             <>
