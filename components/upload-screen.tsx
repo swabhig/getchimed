@@ -316,11 +316,11 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6 flex flex-col">
+    <div className="mx-auto max-w-2xl px-4 py-10">
       {(status === "inserting" || status === "analyzing" || status === "benchmarking") && (
         <LoadingOverlay status={status} />
       )}
-      <header className="mb-6">
+      <header className="mb-10">
         <div className="mb-4 flex items-center gap-3 animate-chime-rise">
           <span className="inline-flex items-baseline text-lg font-bold tracking-tight text-foreground">
             Chime
@@ -331,16 +331,16 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
           </span>
         </div>
         <h1
-          className="text-3xl font-extrabold tracking-tight text-foreground text-balance sm:text-4xl animate-chime-rise"
+          className="text-4xl font-extrabold tracking-tight text-foreground text-balance sm:text-5xl animate-chime-rise"
           style={{ animationDelay: "0.08s" }}
         >
-          Know what matters to your customers.
+          Know what actually matters to your customers.
         </h1>
         <p
-          className="mt-2 text-sm leading-relaxed text-muted-foreground text-pretty max-w-lg animate-chime-rise"
+          className="mt-4 text-base leading-relaxed text-muted-foreground text-pretty max-w-lg animate-chime-rise"
           style={{ animationDelay: "0.16s" }}
         >
-          Upload your feedback. Get the 2–3 things worth acting on — not the noise.
+          Upload your NPS survey responses. Extract 2–3 high-impact themes that reveal what truly drives satisfaction — without the noise.
         </p>
       </header>
 
