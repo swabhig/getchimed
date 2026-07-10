@@ -597,13 +597,11 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
       {/* Analyze */}
       <div className="mt-8 flex items-center justify-between gap-4">
         <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          {canAnalyze ? (
+          {canAnalyze && (
             <>
               <Check className="size-3.5 text-promoter" />
               Ready to analyze
             </>
-          ) : (
-            "Map a score and comment column to continue"
           )}
         </p>
         <button
@@ -643,7 +641,7 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
               <h2 className="text-2xl font-bold text-foreground">Save your insights</h2>
               <div className="space-y-2">
                 <p className="text-sm text-foreground">
-                  Sign in with Google to save up to 4 NPS surveys with getChimed.
+                  Sign in with Google to save up to 4 NPS surveys with Chimed.
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Without signing in, your analysis will be visible now but won&apos;t be saved for later.

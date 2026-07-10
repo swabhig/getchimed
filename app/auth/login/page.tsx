@@ -61,7 +61,7 @@ export default function LoginPage() {
           {/* Footer link */}
           <div className="border-t border-border pt-8">
             <a href="/about" className="text-sm font-medium text-brand-accent underline-offset-4 hover:underline">
-              Learn about getChimed →
+              Learn about Chimed →
             </a>
           </div>
         </div>
