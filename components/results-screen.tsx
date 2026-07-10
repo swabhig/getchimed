@@ -5,8 +5,7 @@ import { ArrowRight, X, Bug, Zap, LifeBuoy, TrendingUp, Wrench, AlertCircle, Inf
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { WordCloud } from "@/components/word-cloud"
-import type { AnalysisResult, FlagCategory, Theme, BenchmarkResponse } from "@/lib/nps-data"
-import { ExternalLink } from "lucide-react"
+import type { AnalysisResult, FlagCategory, Theme } from "@/lib/nps-data"
 
 interface ResultsScreenProps {
   data: AnalysisResult
@@ -24,21 +23,6 @@ const flagMeta: Record<FlagCategory, { label: string; icon: typeof Bug; classNam
   bug: { label: "Bug", icon: Bug, className: "bg-detractor-muted text-detractor" },
   friction: { label: "Friction", icon: Zap, className: "bg-passive-muted text-passive" },
   support: { label: "Support", icon: LifeBuoy, className: "bg-muted text-muted-foreground" },
-}
-
-function getBenchmarkBadgeColor(sentiment: BenchmarkResponse["sentiment"]) {
-  switch (sentiment) {
-    case "excellent":
-    case "above-benchmark":
-      return "bg-promoter-muted text-promoter"
-    case "at-benchmark":
-      return "bg-promoter-muted/50 text-promoter"
-    case "below-benchmark":
-    case "needs-attention":
-      return "bg-detractor-muted text-detractor"
-    default:
-      return "bg-muted text-muted-foreground"
-  }
 }
 
 function SectionHeader({ title, tooltip }: { title: string; tooltip: string }) {
@@ -88,25 +72,31 @@ export function ResultsScreen({ data, onExport, onReset }: ResultsScreenProps) {
           <p className="text-xs font-medium tracking-widest uppercase text-muted-foreground">Your NPS Score</p>
           <p className="mt-2 text-6xl font-bold tracking-tight text-foreground">{npsScore}</p>
           
-          {/* Benchmark badge below score */}
+          {/* Benchmark link with animated tooltip */}
           {data.benchmark && (
-            <div className="mt-5 flex flex-col items-center gap-1">
-              <div className="flex items-center gap-1.5">
-                <div className={cn("rounded-full px-3 py-1 text-xs font-semibold", getBenchmarkBadgeColor(data.benchmark.sentiment))}>
-                  {data.benchmark.remark}
-                </div>
-                {data.benchmark.sourceUrl && (
-                  <a
-                    href={data.benchmark.sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    <ExternalLink className="size-3.5" />
-                  </a>
+            <div className="group relative mt-5 inline-flex justify-center">
+              <a
+                href={data.benchmark.sourceUrl || "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-medium text-promoter underline-offset-4 hover:underline focus:outline-none focus-visible:underline"
+              >
+                See industry benchmark &rarr;
+              </a>
+              <div
+                role="tooltip"
+                className={cn(
+                  "pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-64 -translate-x-1/2 origin-bottom",
+                  "scale-95 opacity-0 transition-all duration-200 ease-out",
+                  "group-hover:scale-100 group-hover:opacity-100",
+                  "group-focus-within:scale-100 group-focus-within:opacity-100",
                 )}
+              >
+                <div className="rounded-lg border border-border bg-popover px-3 py-2 text-left shadow-lg">
+                  <p className="text-xs leading-relaxed text-popover-foreground">{data.benchmark.remark}</p>
+                  <p className="mt-1.5 text-xs font-medium text-muted-foreground">{data.benchmark.source}</p>
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground">{data.benchmark.source}</p>
             </div>
           )}
         </div>
