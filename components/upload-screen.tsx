@@ -350,8 +350,8 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
         style={{ animationDelay: "0.24s" }}
       >
         <Info className="size-4 shrink-0 text-muted-foreground" />
-        <p className="text-xs leading-relaxed text-muted-foreground">
-          Used only for this analysis — never sold or used to train models.{" "}
+        <p className="flex-1 text-xs leading-relaxed text-muted-foreground">
+          Your responses are only used to run this analysis — never sold, shared, or used to train models.{" "}
           <Link href="/privacy" target="_blank" className="font-medium text-foreground underline underline-offset-2">
             Privacy Policy
           </Link>

@@ -8,7 +8,14 @@ export const metadata = {
 export default function TermsPage() {
   return (
     <div className="min-h-svh bg-background">
-      <div className="border-b border-border px-4 py-4 sm:px-6 lg:px-8">
+      <div className="border-b border-border px-4 py-4 sm:px-6 lg:px-8 flex items-center justify-between">
+        <Link href="/" className="flex items-center gap-2" aria-label="Chime home">
+          <img src="/icons/chime-icon-192.png" alt="Chime logo" className="size-7 rounded-md" />
+          <span className="inline-flex items-baseline font-bold text-base tracking-tight text-foreground">
+            Chime
+            <span className="ml-0.5 size-1.5 rounded-full bg-brand-accent" />
+          </span>
+        </Link>
         <Link
           href="/"
           className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"

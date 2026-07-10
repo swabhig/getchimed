@@ -32,6 +32,13 @@ export default function StartPage() {
 
   return (
     <div className="relative flex min-h-svh flex-col items-center justify-center px-4">
+      <Link href="/" className="absolute left-5 top-5 flex items-center gap-2" aria-label="Chime home">
+        <img src="/icons/chime-icon-192.png" alt="Chime logo" className="size-7 rounded-md" />
+        <span className="inline-flex items-baseline font-bold text-base tracking-tight text-foreground">
+          Chime
+          <span className="ml-0.5 size-1.5 rounded-full bg-brand-accent" />
+        </span>
+      </Link>
       <button
         type="button"
         onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
