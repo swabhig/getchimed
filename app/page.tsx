@@ -24,19 +24,28 @@ export default function Page() {
   const activeIndex = steps.findIndex((s) => s.key === step)
 
   useEffect(() => {
-    const supabase = createClient()
-    
+    let mounted = true
+
     const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      
-      if (user) {
-        setUser(user)
+      try {
+        const supabase = createClient()
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+        
+        if (mounted && user) {
+          setUser(user)
+        }
+      } catch (error) {
+        console.error("[v0] Failed to get user:", error)
       }
     }
 
     getUser()
+
+    return () => {
+      mounted = false
+    }
   }, [])
 
   async function handleSignOut() {

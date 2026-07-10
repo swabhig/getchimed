@@ -1,50 +1,47 @@
 'use client'
 
 import Link from 'next/link'
-import Head from 'next/head'
 
 export default function LoginPage() {
   return (
     <>
-      <Head>
-        <style>{`
-          @keyframes shimmer-chime {
-            0% {
-              background-position: -1000px 0;
-            }
-            100% {
-              background-position: 1000px 0;
-            }
+      <style>{`
+        @keyframes shimmer-chime {
+          0% {
+            background-position: -1000px 0;
           }
-          
-          @keyframes float {
-            0%, 100% {
-              transform: translateY(0px);
-            }
-            50% {
-              transform: translateY(-8px);
-            }
+          100% {
+            background-position: 1000px 0;
           }
-          
-          .animate-shimmer-chime {
-            background: linear-gradient(
-              90deg,
-              #fbbf24,
-              #f59e0b,
-              #fbbf24
-            );
-            background-size: 1000px 100%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: shimmer-chime 3s infinite;
+        }
+        
+        @keyframes float {
+          0%, 100% {
+            transform: translateY(0px);
           }
-          
-          .animate-float-chime {
-            animation: float 2s ease-in-out infinite;
+          50% {
+            transform: translateY(-8px);
           }
-        `}</style>
-      </Head>
+        }
+        
+        .animate-shimmer-chime {
+          background: linear-gradient(
+            90deg,
+            #fbbf24,
+            #f59e0b,
+            #fbbf24
+          );
+          background-size: 1000px 100%;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          animation: shimmer-chime 3s infinite;
+        }
+        
+        .animate-float-chime {
+          animation: float 2s ease-in-out infinite;
+        }
+      `}</style>
       <div className="flex min-h-svh flex-col items-center justify-center px-4">
         <div className="w-full max-w-sm space-y-12 text-center">
           {/* Hero headline with animated "chime" */}
