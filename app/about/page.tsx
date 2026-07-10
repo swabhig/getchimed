@@ -22,9 +22,9 @@ export default function AboutPage() {
       <article className="mx-auto w-full max-w-[640px] px-6 py-16 flex flex-col gap-5">
         {/* Hero */}
         <section>
-          <div className="flex items-end gap-1 mb-5">
+          <div className="flex items-baseline gap-1 mb-5">
             <span className="text-[15px] font-extrabold tracking-tight text-foreground">Chime</span>
-            <span className="mb-0.5 size-[5px] rounded-full bg-brand-accent" />
+            <span className="size-[5px] rounded-full bg-brand-accent" />
           </div>
           <h1 className="text-[44px] font-extrabold tracking-tight leading-[1.1] text-foreground">
             to ring true, <span className="text-brand-accent">in agreement.</span>
