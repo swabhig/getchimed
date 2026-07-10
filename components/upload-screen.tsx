@@ -321,26 +321,37 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
         <LoadingOverlay status={status} />
       )}
       <header className="mb-10">
-        <div className="mb-4 flex items-center gap-2">
-          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-muted text-xs font-medium text-foreground">
-            <span className="inline-flex items-baseline font-bold tracking-tight">
-              Chimed
-              <span className="ml-0.5 size-1 rounded-full bg-brand-accent" />
+        <div className="mb-4 flex items-center gap-3 animate-chime-rise">
+          <span className="inline-flex items-center gap-2">
+            <img src="/icons/chime-icon-192.png" alt="Chime logo" className="size-7 rounded-lg" />
+            <span className="inline-flex items-center text-lg font-bold tracking-tight text-foreground">
+              Chime
+              <span className="ml-0.5 size-1.5 rounded-full bg-brand-accent animate-chime-ripple" />
             </span>
-            <span className="text-muted-foreground">·</span>
+          </span>
+          <span className="inline-flex items-center px-3 py-1 rounded-full border border-border bg-muted text-xs font-medium text-muted-foreground">
             MVP · BETA
           </span>
         </div>
-        <h1 className="text-4xl font-extrabold tracking-tight text-foreground text-balance sm:text-5xl">
+        <h1
+          className="text-4xl font-extrabold tracking-tight text-foreground text-balance sm:text-5xl animate-chime-rise"
+          style={{ animationDelay: "0.08s" }}
+        >
           Know what actually matters to your customers.
         </h1>
-        <p className="mt-4 text-base leading-relaxed text-muted-foreground text-pretty max-w-lg">
+        <p
+          className="mt-4 text-base leading-relaxed text-muted-foreground text-pretty max-w-lg animate-chime-rise"
+          style={{ animationDelay: "0.16s" }}
+        >
           Upload your feedback. Get the 2–3 things worth acting on — not the noise.
         </p>
       </header>
 
       {/* Trust line — sits directly above the upload control, not buried in a footer */}
-      <div className="mb-6 flex items-start gap-2.5 rounded-xl bg-muted px-4 py-3">
+      <div
+        className="mb-6 flex items-start gap-2.5 rounded-xl bg-muted px-4 py-3 animate-chime-rise"
+        style={{ animationDelay: "0.24s" }}
+      >
         <Info className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
         <p className="text-xs leading-relaxed text-muted-foreground">
           Your responses are only used to run this analysis. We never sell your data or use it to train models.{" "}
