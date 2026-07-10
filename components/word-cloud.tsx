@@ -57,31 +57,42 @@ export function WordCloud({ title, segment, themes, activeLabel, onSelect }: Wor
   function renderCloud() {
     if (!canvasRef.current || !window.WordCloud || themes.length === 0) return
 
+    console.log("[v0] WordCloud rendering", themes.length, "themes for", segment)
+
     const colors = segmentColors[segment]
     const minFreq = Math.min(...themes.map((t) => t.frequency))
     const maxFreq = Math.max(...themes.map((t) => t.frequency))
 
-    // Prepare data for wordcloud2: [word, frequency] pairs
+    // Font-size bounds (in px). Normalize each frequency into this range so the
+    // biggest word can't swallow the whole canvas and the smallest stays legible.
+    const MIN_FONT = 16
+    const MAX_FONT = 48
+    const range = maxFreq - minFreq
+
+    // Prepare data for wordcloud2: [word, sizeInPx, theme] tuples.
+    // The size here is already the final pixel size, so weightFactor stays at 1.
     const data = themes.map((theme) => {
       const isActive = activeLabel === theme.label
-      // Scale frequency for sizing
-      const scaledFreq = ((theme.frequency - minFreq) / (maxFreq - minFreq)) * 100 + 10
-      return [theme.label, isActive ? scaledFreq * 1.5 : scaledFreq, theme]
+      // When every theme shares the same frequency, range is 0 — fall back to a mid size.
+      const normalized = range === 0 ? 0.5 : (theme.frequency - minFreq) / range
+      let size = MIN_FONT + normalized * (MAX_FONT - MIN_FONT)
+      if (isActive) size *= 1.25
+      return [theme.label, size, theme]
     })
 
     try {
       window.WordCloud([canvasRef.current], {
         list: data,
-        gridSize: 8,
-        maxRotation: Math.PI / 180, // 1 degree max rotation
+        gridSize: 4,
+        weightFactor: 1,
+        minSize: MIN_FONT,
         rotateRatio: 0.35,
         rotationSteps: 2,
+        shrinkToFit: true,
+        drawOutOfBound: false,
         fontFamily: "system-ui, -apple-system, sans-serif",
         fontWeight: "600",
-        color: (word: string, weight: number) => {
-          const idx = Math.floor((Math.random() * colors.length))
-          return colors[idx]
-        },
+        color: () => colors[Math.floor(Math.random() * colors.length)],
         click: (item: any) => {
           const theme = themes.find((t) => t.label === item[0])
           if (theme) onSelect(theme)
@@ -129,9 +140,9 @@ export function WordCloud({ title, segment, themes, activeLabel, onSelect }: Wor
       </div>
       <canvas
         ref={canvasRef}
-        width={400}
-        height={300}
-        className="mx-auto block"
+        width={520}
+        height={320}
+        className="mx-auto block max-w-full"
         style={{ cursor: "pointer" }}
       />
     </section>
