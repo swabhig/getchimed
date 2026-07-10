@@ -321,8 +321,13 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
         <LoadingOverlay status={status} />
       )}
       <header className="mb-10">
-        <div className="mb-4">
-          <span className="inline-flex items-center px-3 py-1 rounded-full border border-border bg-muted text-xs font-medium text-foreground">
+        <div className="mb-4 flex items-center gap-2">
+          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-muted text-xs font-medium text-foreground">
+            <span className="inline-flex items-baseline font-bold tracking-tight">
+              Chimed
+              <span className="ml-0.5 size-1 rounded-full bg-brand-accent" />
+            </span>
+            <span className="text-muted-foreground">·</span>
             MVP · BETA
           </span>
         </div>

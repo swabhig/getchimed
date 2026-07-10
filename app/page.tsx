@@ -90,10 +90,11 @@ export default function Page() {
     <div className="flex h-screen flex-col overflow-hidden bg-background">
       <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur">
         <div className="flex items-center justify-between gap-4 px-6 py-4">
-          <div className="font-bold text-lg tracking-tight text-foreground">
-            <span className="inline-flex items-end">
+          <div className="flex items-center gap-2 font-bold text-lg tracking-tight text-foreground">
+            <img src="/icons/chime-icon-192.png" alt="Chimed logo" className="size-7 rounded-md" />
+            <span className="inline-flex items-baseline">
               Chimed
-              <span className="mb-1 ml-0.5 size-1.5 rounded-full bg-brand-accent" />
+              <span className="ml-0.5 size-1.5 rounded-full bg-brand-accent" />
             </span>
           </div>
           
