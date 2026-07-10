@@ -1,12 +1,15 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { Loader2 } from 'lucide-react'
+import { useTheme } from 'next-themes'
+import { Loader2, Sun, Moon } from 'lucide-react'
 import { useState } from 'react'
 
 export default function StartPage() {
   const router = useRouter()
+  const { theme, setTheme } = useTheme()
   const [isLoading, setIsLoading] = useState(false)
 
   async function signInWithGoogle() {
@@ -28,7 +31,16 @@ export default function StartPage() {
   }
 
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center px-4">
+    <div className="relative flex min-h-svh flex-col items-center justify-center px-4">
+      <button
+        type="button"
+        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+        className="absolute right-5 top-5 flex size-9 items-center justify-center rounded-full border border-border bg-card text-foreground hover:bg-muted"
+        aria-label="Toggle theme"
+      >
+        {theme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}
+      </button>
+
       <div className="w-full max-w-sm space-y-8 text-center">
         {/* Header */}
         <div className="space-y-4">
@@ -77,7 +89,11 @@ export default function StartPage() {
             )}
           </button>
           <p className="text-xs text-muted-foreground">
-            We use your first name to personalize your experience.
+            We only ask for your name and email — see our{" "}
+            <Link href="/privacy" className="underline underline-offset-2">
+              Privacy Policy
+            </Link>
+            .
           </p>
         </div>
 

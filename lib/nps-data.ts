@@ -20,6 +20,7 @@ export interface ActionItem {
   category: ActionCategory
   team: string
   mentions: number
+  rowRefs: string[]
 }
 
 export interface ResponseRow {
@@ -140,12 +141,24 @@ function buildActionList(themes: Theme[]): ActionItem[] {
       .filter((t) => t.segment === "promoter")
       .sort(byFreq)
       .slice(0, 2)
-      .map((t) => ({ theme: t.label, category: "double-down" as const, team: getTeamForTheme(t.label), mentions: t.frequency })),
+      .map((t) => ({
+        theme: t.label,
+        category: "double-down" as const,
+        team: getTeamForTheme(t.label),
+        mentions: t.frequency,
+        rowRefs: t.rowRefs,
+      })),
     ...themes
       .filter((t) => t.segment === "passive")
       .sort(byFreq)
       .slice(0, 3)
-      .map((t) => ({ theme: t.label, category: "fix-blocker" as const, team: getTeamForTheme(t.label), mentions: t.frequency })),
+      .map((t) => ({
+        theme: t.label,
+        category: "fix-blocker" as const,
+        team: getTeamForTheme(t.label),
+        mentions: t.frequency,
+        rowRefs: t.rowRefs,
+      })),
   ]
 }
 
@@ -206,11 +219,11 @@ export const mockAnalysis: AnalysisResult = {
     { comment: "Too much friction to complete a simple import.", category: "friction", rowRef: "55" },
   ],
   actionList: [
-    { theme: "support responsiveness", category: "double-down", team: "Support", mentions: 31 },
-    { theme: "fast performance", category: "double-down", team: "Engineering", mentions: 28 },
-    { theme: "export stability", category: "fix-blocker", team: "Engineering", mentions: 14 },
-    { theme: "pricing clarity", category: "fix-blocker", team: "Product", mentions: 22 },
-    { theme: "onboarding flow", category: "fix-blocker", team: "Product", mentions: 16 },
+    { theme: "support responsiveness", category: "double-down", team: "Support", mentions: 31, rowRefs: ["45", "21", "33"] },
+    { theme: "fast performance", category: "double-down", team: "Engineering", mentions: 28, rowRefs: ["12", "45", "78", "18"] },
+    { theme: "export stability", category: "fix-blocker", team: "Engineering", mentions: 14, rowRefs: ["20"] },
+    { theme: "pricing clarity", category: "fix-blocker", team: "Product", mentions: 22, rowRefs: ["62", "64"] },
+    { theme: "onboarding flow", category: "fix-blocker", team: "Product", mentions: 16, rowRefs: ["70"] },
   ],
   responses: mockResponses,
 }

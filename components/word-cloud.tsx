@@ -1,6 +1,5 @@
 "use client"
 
-import { useEffect, useRef } from "react"
 import { cn } from "@/lib/utils"
 import type { Segment, Theme } from "@/lib/nps-data"
 
@@ -12,110 +11,31 @@ interface WordCloudProps {
   onSelect: (theme: Theme) => void
 }
 
-declare global {
-  interface Window {
-    WordCloud?: any
-  }
+// Same props interface as before — this component is a drop-in replacement.
+// Per the Claude Design handoff: no canvas/wordcloud2.js. Each theme renders
+// as a plain <span>-like button, sized/weighted/opacity by frequency
+// (normalized per segment), colored by segment, with the active theme in the
+// brand accent color + underline. Simpler, no CDN dependency, no
+// click-hit-testing against a canvas.
+
+const segmentDotClass: Record<Segment, string> = {
+  promoter: "bg-promoter",
+  passive: "bg-passive",
+  detractor: "bg-detractor",
 }
 
-const segmentColors: Record<Segment, string[]> = {
-  promoter: ["#16a34a", "#22c55e", "#4ade80", "#86efac"],
-  passive: ["#ca8a04", "#eab308", "#facc15", "#fde047"],
-  detractor: ["#dc2626", "#ef4444", "#f87171", "#fca5a5"],
-}
-
-const segmentText: Record<Segment, string> = {
+const segmentTextClass: Record<Segment, string> = {
   promoter: "text-promoter",
   passive: "text-passive",
   detractor: "text-detractor",
 }
 
 export function WordCloud({ title, segment, themes, activeLabel, onSelect }: WordCloudProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    // Load wordcloud2.js from CDN
-    if (window.WordCloud) {
-      renderCloud()
-      return
-    }
-
-    const script = document.createElement("script")
-    script.src = "https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.0.6/wordcloud2.min.js"
-    script.async = true
-    script.onload = () => {
-      renderCloud()
-    }
-    document.head.appendChild(script)
-
-    return () => {
-      document.head.removeChild(script)
-    }
-  }, [themes, activeLabel])
-
-  function renderCloud() {
-    if (!canvasRef.current || !window.WordCloud || themes.length === 0) return
-
-    console.log("[v0] WordCloud rendering", themes.length, "themes for", segment)
-
-    const colors = segmentColors[segment]
-    const minFreq = Math.min(...themes.map((t) => t.frequency))
-    const maxFreq = Math.max(...themes.map((t) => t.frequency))
-
-    // Font-size bounds (in px). Normalize each frequency into this range so the
-    // biggest word can't swallow the whole canvas and the smallest stays legible.
-    const MIN_FONT = 16
-    const MAX_FONT = 48
-    const range = maxFreq - minFreq
-
-    // Prepare data for wordcloud2: [word, sizeInPx, theme] tuples.
-    // The size here is already the final pixel size, so weightFactor stays at 1.
-    const data = themes.map((theme) => {
-      const isActive = activeLabel === theme.label
-      // When every theme shares the same frequency, range is 0 — fall back to a mid size.
-      const normalized = range === 0 ? 0.5 : (theme.frequency - minFreq) / range
-      let size = MIN_FONT + normalized * (MAX_FONT - MIN_FONT)
-      if (isActive) size *= 1.25
-      return [theme.label, size, theme]
-    })
-
-    try {
-      window.WordCloud([canvasRef.current], {
-        list: data,
-        gridSize: 4,
-        weightFactor: 1,
-        minSize: MIN_FONT,
-        rotateRatio: 0.35,
-        rotationSteps: 2,
-        shrinkToFit: true,
-        drawOutOfBound: false,
-        fontFamily: "system-ui, -apple-system, sans-serif",
-        fontWeight: "600",
-        color: () => colors[Math.floor(Math.random() * colors.length)],
-        click: (item: any) => {
-          const theme = themes.find((t) => t.label === item[0])
-          if (theme) onSelect(theme)
-        },
-      })
-    } catch (err) {
-      console.error("WordCloud2 rendering error:", err)
-    }
-  }
-
   if (themes.length === 0) {
     return (
-      <section
-        className="rounded-lg border border-border bg-card p-5"
-        aria-label={title}
-      >
+      <section className="rounded-2xl border border-border bg-card p-5" aria-label={title}>
         <div className="mb-4 flex items-center gap-2">
-          <span
-            className={cn(
-              "size-2 rounded-full",
-              segment === "promoter" ? "bg-promoter" : segment === "passive" ? "bg-passive" : "bg-detractor"
-            )}
-          />
+          <span className={cn("size-2 rounded-full", segmentDotClass[segment])} />
           <h3 className="text-sm font-medium text-foreground">{title}</h3>
         </div>
         <p className="text-xs text-muted-foreground">No themes available.</p>
@@ -123,28 +43,46 @@ export function WordCloud({ title, segment, themes, activeLabel, onSelect }: Wor
     )
   }
 
+  const freqs = themes.map((t) => t.frequency)
+  const min = Math.min(...freqs)
+  const max = Math.max(...freqs)
+  const range = max - min || 1
+
   return (
-    <section
-      ref={containerRef}
-      className="rounded-lg border border-border bg-card p-5"
-      aria-label={title}
-    >
+    <section className="rounded-2xl border border-border bg-card p-5" aria-label={title}>
       <div className="mb-4 flex items-center gap-2">
-        <span
-          className={cn(
-            "size-2 rounded-full",
-            segment === "promoter" ? "bg-promoter" : segment === "passive" ? "bg-passive" : "bg-detractor"
-          )}
-        />
+        <span className={cn("size-2 rounded-full", segmentDotClass[segment])} />
         <h3 className="text-sm font-medium text-foreground">{title}</h3>
       </div>
-      <canvas
-        ref={canvasRef}
-        width={520}
-        height={320}
-        className="mx-auto block max-w-full"
-        style={{ cursor: "pointer" }}
-      />
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-2">
+        {themes.map((theme) => {
+          const normalized = (theme.frequency - min) / range
+          const isActive = activeLabel === theme.label
+          const fontSize = 15 + normalized * 21 // 15px – 36px
+          const fontWeight = isActive ? 800 : 500 + Math.round(normalized * 200) // 500 – 700
+          const opacity = isActive ? 1 : 0.55 + normalized * 0.45
+
+          return (
+            <button
+              key={theme.label}
+              type="button"
+              onClick={() => onSelect(theme)}
+              style={{
+                fontSize: `${fontSize}px`,
+                fontWeight,
+                opacity,
+                lineHeight: 1.15,
+              }}
+              className={cn(
+                "cursor-pointer bg-transparent border-none p-0 font-sans transition-[color,opacity]",
+                isActive ? "text-brand-accent underline underline-offset-4" : segmentTextClass[segment],
+              )}
+            >
+              {theme.label}
+            </button>
+          )
+        })}
+      </div>
     </section>
   )
 }

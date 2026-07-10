@@ -82,7 +82,7 @@ export default function Page() {
   }
 
   return (
-    <div className="flex flex-col min-h-svh bg-background">
+    <div className="flex h-screen flex-col overflow-hidden bg-background">
       <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur">
         <div className="flex items-center justify-between gap-4 px-6 py-4">
           <div className="font-bold text-lg tracking-tight text-foreground">
@@ -155,7 +155,12 @@ export default function Page() {
             />
           )}
           {step === "results" && (
-            <ResultsScreen data={analysis} onExport={() => setStep("export")} onReset={() => setStep("upload")} />
+            <ResultsScreen
+              data={analysis}
+              onExport={() => setStep("export")}
+              onReset={() => setStep("upload")}
+              user={user}
+            />
           )}
           {step === "export" && <ExportScreen data={analysis} onBack={() => setStep("results")} />}
 

@@ -90,7 +90,7 @@ export function ExportScreen({ data, onBack }: ExportScreenProps) {
       </header>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="flex flex-col rounded-lg border border-border bg-card p-5">
+        <div className="flex flex-col rounded-2xl border border-border bg-card p-5">
           <div className="flex size-11 items-center justify-center rounded-full bg-muted">
             <Download className="size-5 text-foreground" />
           </div>
@@ -104,7 +104,7 @@ export function ExportScreen({ data, onBack }: ExportScreenProps) {
           </Button>
         </div>
 
-        <div className="flex flex-col rounded-lg border border-border bg-card p-5">
+        <div className="flex flex-col rounded-2xl border border-border bg-card p-5">
           <div className="flex size-11 items-center justify-center rounded-full bg-promoter-muted">
             <Sheet className="size-5 text-promoter" />
           </div>
@@ -118,7 +118,7 @@ export function ExportScreen({ data, onBack }: ExportScreenProps) {
           </Button>
         </div>
 
-        <div className="flex flex-col rounded-lg border border-border bg-card p-5">
+        <div className="flex flex-col rounded-2xl border border-border bg-card p-5">
           <div className="flex size-11 items-center justify-center rounded-full bg-passive-muted">
             <MessageSquare className="size-5 text-passive" />
           </div>
@@ -134,18 +134,18 @@ export function ExportScreen({ data, onBack }: ExportScreenProps) {
       </div>
 
       <details className="mt-6 group">
-        <summary className="flex cursor-pointer select-none items-center gap-2 rounded-lg border border-border bg-card p-4 hover:bg-muted/50">
+        <summary className="flex cursor-pointer select-none items-center gap-2 rounded-2xl border border-border bg-card p-4 hover:bg-muted/50">
           <span className="flex-1 text-sm font-medium text-foreground">Preview Huddle Summary</span>
           <span className="text-muted-foreground transition-transform group-open:rotate-180">▼</span>
         </summary>
-        <div className="mt-3 rounded-lg border border-border bg-muted/30 p-4">
+        <div className="mt-3 rounded-2xl border border-border bg-muted/30 p-4">
           <pre className="overflow-x-auto whitespace-pre-wrap break-words text-xs leading-relaxed text-foreground font-mono">
             {generateHuddleSummary(data)}
           </pre>
         </div>
       </details>
 
-      <div className="mt-6 flex items-center gap-2 rounded-lg border border-border bg-muted/50 p-4 text-xs text-muted-foreground">
+      <div className="mt-6 flex items-center gap-2 rounded-2xl border border-border bg-muted/50 p-4 text-xs text-muted-foreground">
         <Check className="size-4 shrink-0 text-promoter" />
         Your analysis has {data.responses.length} responses and {data.actionList.length} prioritized actions ready to export.
       </div>

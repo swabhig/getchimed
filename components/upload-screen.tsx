@@ -1,11 +1,13 @@
 "use client"
 
 import { useRef, useState } from "react"
+import Link from "next/link"
 import Papa from "papaparse"
-import { Upload, Link2, FileSpreadsheet, ArrowRight, Check, Loader2, AlertCircle } from "lucide-react"
+import { Upload, Link2, FileSpreadsheet, ArrowRight, Check, Loader2, AlertCircle, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/client"
+import { LoadingOverlay } from "@/components/loading-overlay"
 import { assembleAnalysis, segmentRows, type AnalysisResult, type ClusterResult, type ResponseRow, type BenchmarkContext, type BusinessType, type Model, type SurveyFrequency } from "@/lib/nps-data"
 
 interface UploadScreenProps {
@@ -22,6 +24,8 @@ function ColumnSelect({
   value,
   onChange,
   columns,
+  error,
+  errorMessage,
 }: {
   id: string
   label: string
@@ -29,6 +33,8 @@ function ColumnSelect({
   value: string
   onChange: (v: string) => void
   columns: string[]
+  error?: boolean
+  errorMessage?: string
 }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -41,8 +47,9 @@ function ColumnSelect({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={cn(
-          "h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground",
+          "h-10 rounded-md border bg-background px-3 text-sm text-foreground",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          error ? "border-detractor ring-1 ring-detractor" : "border-input",
         )}
       >
         <option value="">Select a column…</option>
@@ -52,6 +59,7 @@ function ColumnSelect({
           </option>
         ))}
       </select>
+      {error && errorMessage && <p className="text-xs text-detractor">{errorMessage}</p>}
     </div>
   )
 }
@@ -71,6 +79,7 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
   })
   const [status, setStatus] = useState<"idle" | "parsing" | "inserting" | "analyzing" | "benchmarking">("idle")
   const [error, setError] = useState<string | null>(null)
+  const [erroredField, setErroredField] = useState<MappingKey | null>(null)
   const [context, setContext] = useState<BenchmarkContext>({
     industry: "",
     businessType: "B2B",
@@ -93,6 +102,7 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
 
   function parseFile(file: File) {
     setError(null)
+    setErroredField(null)
     setStatus("parsing")
     setFileName(file.name)
     Papa.parse<Record<string, string>>(file, {
@@ -124,15 +134,19 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
 
   // Checks the mapped data for common bad-mapping problems (e.g. reusing an
   // old CSV with fewer columns than expected, or picking the wrong column by
-  // accident) before it reaches Supabase or the LLM. Returns an error string
-  // if something looks wrong, or null if the data looks usable.
+  // accident) before it reaches Supabase or the LLM. Returns which field is
+  // at fault (so that specific select can be highlighted) plus a message, or
+  // null if the data looks usable.
   function validateMappedRows(
     mapped: { score: number; main_benefit: string; improvement: string; persona: string }[],
     totalRawRows: number,
-  ): string | null {
+  ): { field: MappingKey; message: string } | null {
     const scoreValidRatio = mapped.length / Math.max(totalRawRows, 1)
     if (scoreValidRatio < 0.5) {
-      return `Only ${mapped.length} of ${totalRawRows} rows had a valid numeric score (0-10) in the selected column. Double-check you mapped the right column for Score.`
+      return {
+        field: "score",
+        message: `Only ${mapped.length} of ${totalRawRows} rows had a valid numeric score (0-10) in the selected column. Double-check you mapped the right column for Score.`,
+      }
     }
 
     const nonEmpty = (field: "main_benefit" | "improvement") =>
@@ -142,16 +156,25 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
     const improvementRatio = nonEmpty("improvement") / mapped.length
 
     if (mainBenefitRatio < 0.5) {
-      return `The "Main benefit" column is empty for most rows (${Math.round(mainBenefitRatio * 100)}% filled). Check that you selected the right column — if your CSV only has one combined comment column, you'll need separate Main benefit and Improvement columns for accurate analysis.`
+      return {
+        field: "main_benefit",
+        message: `Empty for most rows (${Math.round(mainBenefitRatio * 100)}% filled). If your CSV only has one combined comment column, you'll need separate Main benefit and Improvement columns.`,
+      }
     }
     if (improvementRatio < 0.5) {
-      return `The "Improvement" column is empty for most rows (${Math.round(improvementRatio * 100)}% filled). Check that you selected the right column — if your CSV only has one combined comment column, you'll need separate Main benefit and Improvement columns for accurate analysis.`
+      return {
+        field: "improvement",
+        message: `Empty for most rows (${Math.round(improvementRatio * 100)}% filled). If your CSV only has one combined comment column, you'll need separate Main benefit and Improvement columns.`,
+      }
     }
 
     // Same column accidentally mapped to both fields — not necessarily wrong,
     // but worth catching since it usually means the CSV lacks the second field.
     if (mapping.main_benefit === mapping.improvement) {
-      return `Main benefit and Improvement are both mapped to the same column. Select two different columns so promoter and passive feedback can be analyzed separately.`
+      return {
+        field: "improvement",
+        message: "Mapped to the same column as Main benefit. Select two different columns.",
+      }
     }
 
     return null
@@ -159,6 +182,7 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
 
   async function handleAnalyze() {
     setError(null)
+    setErroredField(null)
     setStatus("inserting")
 
     // Map raw CSV rows to score/main_benefit/improvement/persona using the chosen columns.
@@ -188,7 +212,8 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
     const validationError = validateMappedRows(mapped, rawRows.length)
     if (validationError) {
       setStatus("idle")
-      setError(validationError)
+      setError(validationError.message)
+      setErroredField(validationError.field)
       return
     }
 
@@ -292,19 +317,33 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
-      <header className="mb-12">
+      {(status === "inserting" || status === "analyzing" || status === "benchmarking") && (
+        <LoadingOverlay status={status} />
+      )}
+      <header className="mb-10">
         <div className="mb-4">
           <span className="inline-flex items-center px-3 py-1 rounded-full border border-border bg-muted text-xs font-medium text-foreground">
-            MVP • Beta Stage
+            MVP · BETA
           </span>
         </div>
-        <h1 className="text-4xl font-bold tracking-tight text-foreground text-balance sm:text-5xl">
-          Analyze your NPS feedback.
+        <h1 className="text-4xl font-extrabold tracking-tight text-foreground text-balance sm:text-5xl">
+          Know what actually matters to your customers.
         </h1>
-        <p className="mt-4 text-lg leading-relaxed text-muted-foreground text-pretty max-w-2xl">
-          Upload your survey responses and discover what your customers really need.
+        <p className="mt-4 text-base leading-relaxed text-muted-foreground text-pretty max-w-lg">
+          Upload your feedback. Get the 2–3 things worth acting on — not the noise.
         </p>
       </header>
+
+      {/* Trust line — sits directly above the upload control, not buried in a footer */}
+      <div className="mb-6 flex items-start gap-2.5 rounded-xl bg-muted px-4 py-3">
+        <Info className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          Your responses are only used to run this analysis. We never sell your data or use it to train models.{" "}
+          <Link href="/privacy" target="_blank" className="font-medium text-foreground underline underline-offset-2">
+            Privacy Policy
+          </Link>
+        </p>
+      </div>
 
       {/* Source toggle */}
       <div className="mb-4 inline-flex rounded-lg border border-border bg-muted p-1">
@@ -427,6 +466,8 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
               value={mapping.score}
               onChange={(v) => setMap("score", v)}
               columns={columns}
+              error={erroredField === "score"}
+              errorMessage={erroredField === "score" ? error ?? undefined : undefined}
             />
             <ColumnSelect
               id="map-main-benefit"
@@ -435,6 +476,8 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
               value={mapping.main_benefit}
               onChange={(v) => setMap("main_benefit", v)}
               columns={columns}
+              error={erroredField === "main_benefit"}
+              errorMessage={erroredField === "main_benefit" ? error ?? undefined : undefined}
             />
             <ColumnSelect
               id="map-improvement"
@@ -443,6 +486,8 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
               value={mapping.improvement}
               onChange={(v) => setMap("improvement", v)}
               columns={columns}
+              error={erroredField === "improvement"}
+              errorMessage={erroredField === "improvement" ? error ?? undefined : undefined}
             />
             <ColumnSelect
               id="map-persona"

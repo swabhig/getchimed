@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useTheme } from 'next-themes'
 import { createClient } from '@/lib/supabase/client'
-import { LogOut, MessageCircle, BookOpen, LogIn, Sun, Moon } from 'lucide-react'
+import { MessageCircle, LogIn } from 'lucide-react'
 import { AnalysisResult } from '@/lib/nps-data'
 import { getFirstName, getAvatarUrl } from '@/lib/user'
 
@@ -101,22 +101,27 @@ export function Sidebar({ user, onSelectAnalysis, onSignOut, currentAnalysisId }
   }, [user])
 
   return (
-    <aside className="w-64 border-r border-border bg-background flex flex-col h-full">
+    <aside className="w-[272px] border-r border-sidebar-border bg-sidebar flex flex-col h-full flex-shrink-0">
       {/* Header */}
-      <div className="p-4 border-b border-border">
-        <h2 className="font-bold text-sm text-foreground">Your Analyses</h2>
-        <p className="text-xs text-muted-foreground mt-1">Max 4 surveys saved</p>
+      <div className="p-4 border-b border-sidebar-border">
+        <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Your analyses</h2>
       </div>
 
       {/* Analyses List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-2">
         {!user ? (
-          <div className="rounded-lg border border-dashed border-border p-3">
-            <p className="text-xs text-muted-foreground">Sign in to save up to 4 analyses</p>
+          <div className="rounded-xl border border-dashed border-sidebar-border p-4 text-center">
+            <div className="mx-auto mb-2.5 flex size-7 items-center justify-center rounded-full bg-muted">
+              <span className="size-2.5 rounded-sm border-[1.5px] border-muted-foreground" />
+            </div>
+            <p className="text-[12.5px] font-semibold text-foreground">No saved analyses yet</p>
+            <p className="mt-1 text-[11.5px] leading-relaxed text-muted-foreground">
+              Sign in to save up to 4 and pick up where you left off.
+            </p>
             <button
               onClick={handleSignIn}
               disabled={signingIn}
-              className="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+              className="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-lg border border-sidebar-border px-3 py-2 text-xs font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50"
             >
               <LogIn className="size-4" />
               {signingIn ? 'Signing in...' : 'Sign in with Google'}
@@ -164,16 +169,14 @@ export function Sidebar({ user, onSelectAnalysis, onSignOut, currentAnalysisId }
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                  className="block px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
                 >
-                  <BookOpen className="size-4" />
-                  Methodology
+                  How the magic works
                 </Link>
                 <button
                   onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                  className="w-full text-left block px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
                 >
-                  {theme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}
                   {theme === 'dark' ? 'Light mode' : 'Dark mode'}
                 </button>
                 <button
@@ -181,9 +184,8 @@ export function Sidebar({ user, onSelectAnalysis, onSignOut, currentAnalysisId }
                     setMenuOpen(false)
                     onSignOut()
                   }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                  className="w-full text-left block px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors border-t border-border"
                 >
-                  <LogOut className="size-4" />
                   Sign out
                 </button>
               </div>
@@ -237,16 +239,15 @@ export function Sidebar({ user, onSelectAnalysis, onSignOut, currentAnalysisId }
           WhatsApp
         </a>
 
-        {/* Guests still see a Methodology link directly, since they have no profile dropdown */}
+        {/* Guests still see this link directly, since they have no profile dropdown */}
         {!user && (
           <Link
             href="/about"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            className="block px-3 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
-            <BookOpen className="size-4" />
-            Methodology
+            How the magic works
           </Link>
         )}
       </div>
