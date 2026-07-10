@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
+import { useTheme } from "next-themes"
+import { Sun, Moon } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
 import { UploadScreen } from "@/components/upload-screen"
@@ -25,6 +27,9 @@ export default function Page() {
   const [user, setUser] = useState<any>(null)
   const activeIndex = steps.findIndex((s) => s.key === step)
   const lastSavedRef = useRef<AnalysisResult | null>(null)
+  const { resolvedTheme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
   // Keep `user` in sync with real auth state at all times — not just on
   // initial page load. This is what lets the sidebar and analysis-saving
@@ -106,7 +111,7 @@ export default function Page() {
                     <span
                       className={cn(
                         "flex size-4 items-center justify-center rounded-full text-[10px] font-semibold",
-                        i <= activeIndex ? "bg-black text-white" : "bg-muted text-muted-foreground",
+                        i <= activeIndex ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
                       )}
                     >
                       {i + 1}
@@ -119,13 +124,21 @@ export default function Page() {
             </nav>
           )}
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <Link
               href="/about"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               About
             </Link>
+            <button
+              type="button"
+              onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+              className="flex size-9 items-center justify-center rounded-full border border-border bg-card text-foreground hover:bg-muted transition-colors"
+              aria-label="Toggle theme"
+            >
+              {mounted && resolvedTheme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+            </button>
           </div>
         </div>
       </header>
