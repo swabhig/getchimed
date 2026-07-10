@@ -254,16 +254,12 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
-      <header className="mb-8">
-        <p className="text-4xl font-bold tracking-tight text-foreground text-balance sm:text-5xl">
-          Welcome back, {user?.user_metadata?.first_name || "there"}.
-        </p>
-        <h1 className="mt-6 text-2xl font-semibold tracking-tight text-foreground text-balance">
-          Import your NPS responses
+      <header className="mb-12">
+        <h1 className="text-4xl font-bold tracking-tight text-foreground text-balance sm:text-5xl">
+          Analyze your NPS feedback.
         </h1>
-        <p className="mt-2 text-sm leading-relaxed text-muted-foreground text-pretty">
-          Upload a CSV export or link a Google Sheet, then map your columns so we know which fields hold the score and
-          the comment.
+        <p className="mt-4 text-lg leading-relaxed text-muted-foreground text-pretty max-w-2xl">
+          Upload your survey responses and discover what your customers really need.
         </p>
       </header>
 
@@ -522,7 +518,12 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
             "Map a score and comment column to continue"
           )}
         </p>
-        <Button size="lg" disabled={!canAnalyze} onClick={handleAnalyze}>
+        <Button 
+          size="lg" 
+          disabled={!canAnalyze} 
+          onClick={handleAnalyze}
+          className="bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+        >
           {status === "inserting" ? (
             <>
               <Loader2 className="size-4 animate-spin" />
@@ -578,7 +579,7 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
                 }
               }}
               disabled={googleAuthLoading}
-              className="group relative w-full overflow-hidden rounded-lg border-2 border-promoter bg-promoter px-6 py-3 font-semibold text-white transition-all duration-300 hover:bg-promoter/90 hover:shadow-lg hover:shadow-promoter/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full rounded-lg bg-black text-white px-6 py-3 font-semibold transition-all duration-200 hover:bg-black/90 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-white dark:text-black dark:hover:bg-white/90"
             >
               {googleAuthLoading ? (
                 <>
