@@ -3,13 +3,28 @@
 // Bare-bones terms of service — enough to satisfy Google OAuth's consent
 // screen requirement. Not a substitute for legal review.
 
+import Link from "next/link"
+import { ArrowLeft } from "lucide-react"
+
 export default function TermsPage() {
   return (
-    <main className="mx-auto max-w-2xl px-6 py-20">
-      <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-        Terms of Service
-      </h1>
-      <p className="mt-2 text-sm text-muted-foreground">Last updated: July 2026</p>
+    <div className="min-h-svh bg-background">
+      {/* Top navigation */}
+      <div className="border-b border-border px-4 py-4 sm:px-6 lg:px-8">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="size-4" />
+          Back to app
+        </Link>
+      </div>
+
+      <main className="mx-auto max-w-2xl px-6 py-16">
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+          Terms of Service
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">Last updated: July 2026</p>
 
       <div className="mt-8 space-y-6 text-[15px] leading-7 text-foreground/90">
         <p>
@@ -70,7 +85,25 @@ export default function TermsPage() {
             .
           </p>
         </div>
+
+        {/* Bottom navigation */}
+        <div className="flex items-center justify-between border-t border-border pt-6">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="size-4" />
+            Back to app
+          </Link>
+          <Link
+            href="/privacy"
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Privacy Policy →
+          </Link>
+        </div>
       </div>
-    </main>
+      </main>
+    </div>
   )
 }
