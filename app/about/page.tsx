@@ -77,9 +77,16 @@ export default function AboutPage() {
         {/* Builder card */}
         <section className="rounded-2xl border border-border bg-card p-6 mt-2">
           <div className="flex items-start gap-4">
-            <span className="flex size-14 shrink-0 items-center justify-center rounded-full border border-border bg-muted text-lg font-semibold text-foreground">
-              S
-            </span>
+            <span
+              role="img"
+              aria-label="Swabhi Gupta"
+              className="block size-16 shrink-0 rounded-full border border-border bg-muted bg-no-repeat"
+              style={{
+                backgroundImage: "url(/swabhi.jpg)",
+                backgroundSize: "300%",
+                backgroundPosition: "53% 43%",
+              }}
+            />
             <div>
               <h3 className="text-base font-bold text-foreground">Swabhi Gupta</h3>
               <p className="text-[12.5px] text-muted-foreground mt-0.5">Part-time builder, full-time CX</p>

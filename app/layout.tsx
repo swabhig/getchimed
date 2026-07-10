@@ -9,25 +9,16 @@ const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono'
 const caveat = Caveat({ subsets: ['latin'], weight: ['600', '700'], variable: '--font-caveat' })
 
 export const metadata: Metadata = {
-  title: 'NPS Insight Engine',
+  title: 'getchimed',
   description: 'Turn NPS survey responses into themes, flags, and an action list.',
   generator: 'v0.app',
   icons: {
     icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
+      { url: '/icons/chime-icon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icons/chime-icon-16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/icons/chime-icon-192.png', sizes: '192x192', type: 'image/png' },
     ],
-    apple: '/apple-icon.png',
+    apple: '/icons/chime-icon-180.png',
   },
 }
 

@@ -90,8 +90,12 @@ export default function Page() {
     <div className="flex h-screen flex-col overflow-hidden bg-background">
       <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur">
         <div className="flex items-center justify-between gap-4 px-6 py-4">
-          <div className="font-bold text-lg tracking-tight text-foreground">
-            getChimed
+          <div className="flex items-center gap-2 font-bold text-lg tracking-tight text-foreground">
+            <img src="/icons/chime-icon-192.png" alt="" className="size-7" />
+            <span className="flex items-baseline gap-1">
+              getchimed
+              <span className="size-1.5 rounded-full bg-brand-accent" />
+            </span>
           </div>
           
           {step !== "upload" && (
