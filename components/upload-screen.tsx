@@ -322,12 +322,9 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
       )}
       <header className="mb-10">
         <div className="mb-4 flex items-center gap-3 animate-chime-rise">
-          <span className="inline-flex items-center gap-2">
-            <img src="/icons/chime-icon-192.png" alt="Chime logo" className="size-7 rounded-lg" />
-            <span className="inline-flex items-center text-lg font-bold tracking-tight text-foreground">
-              Chime
-              <span className="ml-0.5 size-1.5 rounded-full bg-brand-accent animate-chime-ripple" />
-            </span>
+          <span className="inline-flex items-center text-lg font-bold tracking-tight text-foreground">
+            Chime
+            <span className="ml-0.5 size-1.5 rounded-full bg-brand-accent animate-chime-ripple" />
           </span>
           <span className="inline-flex items-center px-3 py-1 rounded-full border border-border bg-muted text-xs font-medium text-muted-foreground">
             MVP · BETA
@@ -415,7 +412,7 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
               <div className="flex size-11 items-center justify-center rounded-full bg-muted">
                 <Loader2 className="size-5 animate-spin text-muted-foreground" />
               </div>
-              <p className="text-sm font-medium text-foreground">Parsing {fileName}…</p>
+              <p className="text-sm font-medium text-foreground">Parsing {fileName}��</p>
             </>
           ) : fileName && hasData ? (
             <>
