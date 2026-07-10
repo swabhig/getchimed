@@ -316,11 +316,11 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-10">
+    <div className="mx-auto max-w-2xl px-4 py-8 flex flex-col">
       {(status === "inserting" || status === "analyzing" || status === "benchmarking") && (
         <LoadingOverlay status={status} />
       )}
-      <header className="mb-10">
+      <header className="mb-8">
         <div className="mb-4 flex items-center gap-3 animate-chime-rise">
           <span className="inline-flex items-baseline text-lg font-bold tracking-tight text-foreground">
             Chime

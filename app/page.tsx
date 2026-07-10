@@ -86,9 +86,9 @@ export default function Page() {
   }
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-background">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur">
-        <div className="flex items-center justify-between gap-4 px-6 py-4">
+    <div className="flex h-screen flex-col bg-background">
+      <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur shrink-0">
+        <div className="flex items-center justify-between gap-4 px-6 py-3">
           <div className="flex items-center gap-2 font-bold text-lg tracking-tight text-foreground">
             <img src="/icons/chime-icon-192.png" alt="Chime logo" className="size-7 rounded-md" />
             <span className="inline-flex items-baseline">

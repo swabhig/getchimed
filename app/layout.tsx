@@ -40,9 +40,9 @@ export default function RootLayout({
       <body className="flex min-h-svh flex-col font-sans antialiased">
         <ThemeProvider>
           <div className="flex-1">{children}</div>
-          <footer className="border-t border-border bg-background">
-            <div className="mx-auto max-w-5xl px-4 py-4 text-center text-xs text-muted-foreground">
-              <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
+          <footer className="border-t border-border bg-background shrink-0">
+            <div className="mx-auto max-w-5xl px-4 py-2 text-center text-xs text-muted-foreground">
+              <div className="flex flex-col items-center justify-center gap-2 sm:flex-row sm:gap-3">
                 <div>
                   Methodology inspired by{' '}
                   <a
