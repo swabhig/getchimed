@@ -224,30 +224,19 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
       }
       
       analysis.context = context
-      
+
       setStatus("idle")
-      
+
       // If user is not authenticated, show Google auth modal with the results after sign-in
       if (!user) {
         setPendingAnalysis(analysis)
         setShowGoogleAuth(true)
         return
       }
-      
-      // Save analysis + context to Supabase for authenticated users
-      try {
-        const supabase = createClient()
-        await supabase.from("analyses").insert({
-          themes: analysis.themes,
-          flags: analysis.flags,
-          action_list: analysis.actionList,
-          context: context,
-        })
-      } catch (saveErr) {
-        console.log("[v0] Failed to save analysis to database:", saveErr)
-        // Don't block the flow if save fails
-      }
-      
+
+      // Saving to Supabase is handled centrally in app/page.tsx once the
+      // analysis is displayed and a user is present — no save here to avoid
+      // duplicate/mismatched writes.
       onAnalyze(analysis)
     } catch (err) {
       setStatus("idle")
@@ -575,27 +564,37 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
               onClick={async () => {
                 setGoogleAuthLoading(true)
                 const supabase = createClient()
-                const { error } = await supabase.auth.signInWithOAuth({
+                const { data, error } = await supabase.auth.signInWithOAuth({
                   provider: 'google',
                   options: {
-                    redirectTo:
-                      process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ??
-                      `${window.location.origin}/auth/callback`,
+                    redirectTo: `${window.location.origin}/auth/callback`,
+                    skipBrowserRedirect: true, // don't navigate this window away — open a popup instead
                   },
                 })
 
-                if (error) {
+                if (error || !data?.url) {
                   console.error('Sign in error:', error)
                   setGoogleAuthLoading(false)
                   setError('Failed to sign in. Please try again.')
-                } else {
-                  // Auth successful - proceed with analysis
-                  setShowGoogleAuth(false)
-                  if (pendingAnalysis) {
-                    onAnalyze(pendingAnalysis)
-                    setPendingAnalysis(null)
-                  }
+                  return
                 }
+
+                const popup = window.open(data.url, 'google-oauth', 'width=480,height=640')
+
+                // The main window never navigates away, so pendingAnalysis stays
+                // intact. Listen for the popup completing sign-in, then proceed.
+                const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+                  if (event === 'SIGNED_IN' && session) {
+                    listener.subscription.unsubscribe()
+                    popup?.close()
+                    setGoogleAuthLoading(false)
+                    setShowGoogleAuth(false)
+                    if (pendingAnalysis) {
+                      onAnalyze(pendingAnalysis)
+                      setPendingAnalysis(null)
+                    }
+                  }
+                })
               }}
               disabled={googleAuthLoading}
               className="w-full rounded-lg bg-black text-white px-6 py-3 font-semibold transition-all duration-200 hover:bg-black/90 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-white dark:text-black dark:hover:bg-white/90"

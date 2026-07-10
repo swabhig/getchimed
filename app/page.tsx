@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
@@ -23,64 +23,56 @@ export default function Page() {
   const [step, setStep] = useState<Step>("upload")
   const [analysis, setAnalysis] = useState<AnalysisResult>(mockAnalysis)
   const [user, setUser] = useState<any>(null)
-  const [userChanged, setUserChanged] = useState(false)
   const activeIndex = steps.findIndex((s) => s.key === step)
+  const lastSavedRef = useRef<AnalysisResult | null>(null)
 
+  // Keep `user` in sync with real auth state at all times — not just on
+  // initial page load. This is what lets the sidebar and analysis-saving
+  // logic react correctly to sign-in that happens via the popup flow
+  // triggered mid-analyze, not just a normal full-page sign-in.
   useEffect(() => {
+    const supabase = createClient()
     let mounted = true
 
-    const getUser = async () => {
-      try {
-        const supabase = createClient()
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
-        
-        if (mounted) {
-          if (user) {
-            setUser(user)
-            setUserChanged(true)
-          } else {
-            setUser(null)
-          }
-        }
-      } catch (error) {
-        console.error("[v0] Failed to get user:", error)
-      }
-    }
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (mounted) setUser(user ?? null)
+    })
 
-    getUser()
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (mounted) setUser(session?.user ?? null)
+    })
 
     return () => {
       mounted = false
+      listener.subscription.unsubscribe()
     }
   }, [])
 
-  // Save analysis when user authenticates and we have pending analysis
+  // Single source of truth for saving an analysis, to the `user_analyses`
+  // table the sidebar actually reads from. Guarded by lastSavedRef so the
+  // same analysis object is never saved twice (e.g. on unrelated re-renders).
   useEffect(() => {
-    if (userChanged && user && step === "results") {
-      const saveAnalysis = async () => {
-        try {
-          const supabase = createClient()
-          const { error } = await supabase.from("user_analyses").insert({
-            user_id: user.id,
-            analysis_data: analysis,
-          })
+    if (!user || step !== "results") return
+    if (lastSavedRef.current === analysis) return
+    lastSavedRef.current = analysis
 
-          if (error) {
-            console.error("[v0] Failed to save analysis:", error)
-          } else {
-            console.log("[v0] Analysis saved successfully")
-          }
-        } catch (error) {
-          console.error("[v0] Error saving analysis:", error)
+    const saveAnalysis = async () => {
+      try {
+        const supabase = createClient()
+        const { error } = await supabase.from("user_analyses").insert({
+          user_id: user.id,
+          analysis_data: analysis,
+        })
+        if (error) {
+          console.error("[chime] Failed to save analysis:", error)
         }
+      } catch (error) {
+        console.error("[chime] Error saving analysis:", error)
       }
-
-      saveAnalysis()
-      setUserChanged(false)
     }
-  }, [userChanged, user, analysis, step])
+
+    saveAnalysis()
+  }, [user, analysis, step])
 
   async function handleSignOut() {
     const supabase = createClient()
