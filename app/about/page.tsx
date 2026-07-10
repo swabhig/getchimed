@@ -1,58 +1,80 @@
 import Link from "next/link"
-import { ArrowLeft, BarChart3 } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
 
 export const metadata = {
-  title: "About — NPS Insight Engine",
-  description: "Why we built the NPS Insight Engine and the methodology behind it.",
+  title: "About getChimed",
+  description: "Turn NPS feedback into action without losing the nuance.",
 }
 
 export default function AboutPage() {
   return (
-    <main className="min-h-svh bg-background">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <div className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <BarChart3 className="size-4" />
-            </div>
-            <span className="text-sm font-semibold text-foreground">NPS Insight Engine</span>
-          </div>
+    <div className="min-h-svh flex flex-col bg-background">
+      <div className="flex-1">
+        {/* Back button */}
+        <div className="border-b border-border px-4 py-4 sm:px-6 lg:px-8">
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+            className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
-            <ArrowLeft className="size-3.5" />
+            <ArrowLeft className="size-4" />
             Back to app
           </Link>
         </div>
-      </header>
 
-      <article className="mx-auto max-w-3xl px-4 py-12">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground text-balance sm:text-4xl">
-          Beyond the score.
-        </h1>
-        <p className="mt-4 text-base leading-relaxed text-muted-foreground text-pretty">
-          A Net Promoter Score is a single number, but the story that matters lives in the comments behind it. The NPS
-          Insight Engine reads every open-ended response, clusters them into themes, and turns them into a prioritized
-          action list — so you know exactly what to double down on and what to fix next.
-        </p>
+        {/* Main content */}
+        <article className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8 space-y-16">
+          {/* Hero section */}
+          <section className="space-y-6">
+            <h1 className="text-5xl font-bold tracking-tight text-foreground sm:text-6xl text-balance">
+              About getChimed
+            </h1>
+            <p className="text-xl leading-relaxed text-muted-foreground max-w-2xl">
+              getChimed turns NPS feedback into action, without losing the nuance in a spreadsheet.
+            </p>
+          </section>
 
-        <h2 className="mt-10 text-lg font-semibold text-foreground">The methodology</h2>
-        <p className="mt-3 text-sm leading-relaxed text-muted-foreground text-pretty">
-          We segment respondents into promoters, passives, and detractors, then analyze what each group tells you.
-          Promoters reveal the benefits worth amplifying. Passives point to the blockers keeping them from becoming
-          advocates. Detractors surface the critical issues to route to the right team. This mirrors the
-          product-market-fit engine popularized by Rahul Vohra at Superhuman: measure, segment, and systematically act
-          on the feedback that moves your score.
-        </p>
+          {/* The framework */}
+          <section className="space-y-4 border-t border-border pt-12">
+            <h2 className="text-2xl font-bold text-foreground">The framework</h2>
+            <p className="text-base leading-relaxed text-foreground">
+              Built on Rahul Vohra's product-market fit framework (Superhuman) — segmenting responses the way his engine does, and asking what promoters love and what passives need, instead of averaging everyone's feedback into one flat number.
+            </p>
+          </section>
 
-        <h2 className="mt-10 text-lg font-semibold text-foreground">How to use it</h2>
-        <p className="mt-3 text-sm leading-relaxed text-muted-foreground text-pretty">
-          Upload a CSV of your survey responses, map your columns, and add a little context about your business. In
-          seconds you get benchmarked results, word clouds of the themes customers actually mention, and a huddle-ready
-          summary you can paste straight into Slack or a doc.
-        </p>
-      </article>
-    </main>
+          {/* How it works */}
+          <section className="space-y-4 border-t border-border pt-12">
+            <h2 className="text-2xl font-bold text-foreground">How it works</h2>
+            <p className="text-base leading-relaxed text-foreground">
+              Every theme you see is generated by an LLM reading real responses — never keyword-matched, never rewritten. If a comment doesn't clearly fit a theme, it stays visible as unclustered rather than force-fit.
+            </p>
+          </section>
+
+          {/* About Swabhi */}
+          <section className="space-y-4 border-t border-border pt-12">
+            <h2 className="text-2xl font-bold text-foreground">Built by Swabhi</h2>
+            <p className="text-base leading-relaxed text-foreground">
+              Built solo, still evolving. If something looks off, it probably is — tell me. Feedback, bugs, and feature requests are always welcome at{' '}
+              <a
+                href="mailto:swabhig@gmail.com"
+                className="font-medium text-promoter underline-offset-4 hover:underline"
+              >
+                swabhig@gmail.com
+              </a>
+              .
+            </p>
+          </section>
+
+          {/* CTA */}
+          <section className="border-t border-border pt-12">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 text-base font-medium text-promoter underline-offset-4 hover:underline"
+            >
+              Start analyzing →
+            </Link>
+          </section>
+        </article>
+      </div>
+    </div>
   )
 }

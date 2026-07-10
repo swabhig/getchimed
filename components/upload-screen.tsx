@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/client"
 import { assembleAnalysis, segmentRows, type AnalysisResult, type ClusterResult, type ResponseRow, type BenchmarkContext, type BusinessType, type Model, type SurveyFrequency } from "@/lib/nps-data"
 
 interface UploadScreenProps {
+  user: any
   onAnalyze: (data: AnalysisResult) => void
 }
 
@@ -55,7 +56,7 @@ function ColumnSelect({
   )
 }
 
-export function UploadScreen({ onAnalyze }: UploadScreenProps) {
+export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
   const [source, setSource] = useState<"file" | "sheet">("file")
   const [fileName, setFileName] = useState<string | null>(null)
   const [sheetUrl, setSheetUrl] = useState("")
@@ -247,7 +248,7 @@ export function UploadScreen({ onAnalyze }: UploadScreenProps) {
     <div className="mx-auto max-w-2xl px-4 py-10">
       <header className="mb-8">
         <p className="text-4xl font-bold tracking-tight text-foreground text-balance sm:text-5xl">
-          Beyond the score, chime.
+          Welcome back, {user?.user_metadata?.first_name || "there"}.
         </p>
         <h1 className="mt-6 text-2xl font-semibold tracking-tight text-foreground text-balance">
           Import your NPS responses
