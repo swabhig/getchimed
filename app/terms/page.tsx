@@ -1,15 +1,13 @@
-// app/terms/page.tsx
-//
-// Bare-bones terms of service — enough to satisfy Google OAuth's consent
-// screen requirement. Not a substitute for legal review.
-
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
+
+export const metadata = {
+  title: "Terms of Service — Chime",
+}
 
 export default function TermsPage() {
   return (
     <div className="min-h-svh bg-background">
-      {/* Top navigation */}
       <div className="border-b border-border px-4 py-4 sm:px-6 lg:px-8">
         <Link
           href="/"
@@ -20,74 +18,38 @@ export default function TermsPage() {
         </Link>
       </div>
 
-      <main className="mx-auto max-w-2xl px-6 py-16">
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-          Terms of Service
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">Last updated: July 2026</p>
+      <main className="mx-auto max-w-[640px] px-6 py-16">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Terms of Service</h1>
+        <p className="mt-1 text-xs text-muted-foreground">Last updated: July 2026</p>
 
-      <div className="mt-8 space-y-6 text-[15px] leading-7 text-foreground/90">
-        <p>
-          By using Chime, you agree to these terms. Chime is an early-stage
-          (beta) tool — please read this before uploading customer data.
-        </p>
-
-        <div>
-          <h2 className="text-lg font-medium text-foreground mb-2">The service</h2>
+        <div className="mt-5 space-y-3.5 text-sm leading-relaxed text-foreground">
           <p>
-            Chime analyzes NPS survey feedback you upload, using AI to cluster
-            responses into themes and generate insights. You're responsible
-            for having the right to use and upload any survey data you provide.
+            By using Chime, you agree to these terms. Chime is an early-stage (beta) tool — please read
+            this before uploading customer data.
           </p>
-        </div>
-
-        <div>
-          <h2 className="text-lg font-medium text-foreground mb-2">Beta status</h2>
           <p>
-            Chime is under active development. Features may change, and we
-            can't guarantee uninterrupted availability or that results will be
-            error-free. Use your own judgment before acting on any analysis.
+            Chime analyzes NPS survey feedback you upload using AI to cluster responses into themes and
+            generate insights. You're responsible for having the right to use and upload any data you
+            provide. You retain ownership of it — we don't sell it or use it to train models beyond
+            generating your analysis (see our Privacy Policy).
           </p>
-        </div>
-
-        <div>
-          <h2 className="text-lg font-medium text-foreground mb-2">Your data</h2>
           <p>
-            You retain ownership of any data you upload. We don't sell it or
-            use it to train models beyond what's needed to generate your
-            analysis. See our Privacy Policy for details.
+            Chime is under active development — features may change, and we can't guarantee uninterrupted
+            availability or error-free results. Use your own judgment before acting on any analysis. The
+            service is provided "as is," without warranties, and we aren't liable for decisions made based
+            on its output.
           </p>
-        </div>
-
-        <div>
-          <h2 className="text-lg font-medium text-foreground mb-2">Limitation of liability</h2>
           <p>
-            Chime is provided "as is," without warranties of any kind. We
-            aren't liable for decisions made based on the app's output.
-          </p>
-        </div>
-
-        <div>
-          <h2 className="text-lg font-medium text-foreground mb-2">Changes</h2>
-          <p>
-            We may update these terms as the product evolves. Continued use
-            after changes means you accept the updated terms.
-          </p>
-        </div>
-
-        <div>
-          <h2 className="text-lg font-medium text-foreground mb-2">Contact</h2>
-          <p>
+            We may update these terms as the product evolves; continued use means you accept the changes.
             Questions? Email{" "}
-            <a href="mailto:hello@getchimed.site" className="underline underline-offset-2">
+            <a href="mailto:hello@getchimed.site" className="text-brand-accent font-semibold hover:underline">
               hello@getchimed.site
             </a>
             .
           </p>
         </div>
 
-        {/* Bottom navigation */}
-        <div className="flex items-center justify-between border-t border-border pt-6">
+        <div className="flex items-center justify-between border-t border-border pt-6 mt-8">
           <Link
             href="/"
             className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -95,14 +57,10 @@ export default function TermsPage() {
             <ArrowLeft className="size-4" />
             Back to app
           </Link>
-          <Link
-            href="/privacy"
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
+          <Link href="/privacy" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             Privacy Policy →
           </Link>
         </div>
-      </div>
       </main>
     </div>
   )

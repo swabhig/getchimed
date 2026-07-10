@@ -2,106 +2,180 @@ import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 
 export const metadata = {
-  title: "About getChimed",
-  description: "Turn NPS feedback into action without losing the nuance.",
+  title: "About Chime",
+  description: "Turn NPS feedback into action without losing the nuance in a spreadsheet.",
 }
 
 export default function AboutPage() {
   return (
     <div className="min-h-svh flex flex-col bg-background">
-      <div className="flex-1">
-        {/* Back button */}
-        <div className="border-b border-border px-4 py-4 sm:px-6 lg:px-8">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="size-4" />
-            Back to app
-          </Link>
-        </div>
+      <div className="border-b border-border px-4 py-4 sm:px-6 lg:px-8 flex items-center justify-between">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="size-4" />
+          Back to app
+        </Link>
+      </div>
 
-        {/* Main content */}
-        <article className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8 space-y-14">
-          {/* Hero section */}
-          <section className="space-y-4">
-            <h1 className="text-5xl font-bold tracking-tight text-foreground sm:text-6xl text-balance">
-              About getChimed
-            </h1>
-            <p className="font-[family-name:var(--font-caveat)] text-2xl text-muted-foreground">
-              Beyond the score, chime.
-            </p>
-            <p className="text-xl leading-relaxed text-muted-foreground max-w-2xl">
-              getChimed turns NPS feedback into action, without losing the nuance in a spreadsheet.
-            </p>
-          </section>
+      <article className="mx-auto w-full max-w-[640px] px-6 py-16 flex flex-col gap-5">
+        {/* Hero */}
+        <section>
+          <div className="flex items-baseline gap-1.5 mb-5">
+            <span className="text-[15px] font-extrabold tracking-tight text-foreground">Chime</span>
+            <span className="size-[5px] rounded-full bg-brand-accent" />
+          </div>
+          <h1 className="text-[44px] font-extrabold tracking-tight leading-[1.1] text-foreground">
+            to ring true, <span className="text-brand-accent">in agreement.</span>
+          </h1>
+          <p className="mt-4 text-2xl text-foreground font-[family-name:var(--font-caveat)]">
+            "feedback into focus"
+          </p>
+          <p className="mt-3.5 text-base leading-relaxed text-muted-foreground max-w-[480px]">
+            Chime turns NPS feedback into action, without losing the nuance in a spreadsheet.
+          </p>
+        </section>
 
-          {/* Why I built this — placeholder, needs real founder voice */}
-          <section className="space-y-4 rounded-2xl border border-border bg-card p-6">
-            <h2 className="text-2xl font-bold text-foreground">Why I built this</h2>
-            <p className="text-base leading-relaxed text-foreground">
-              [Placeholder — replace with Swabhi's real story in her own words. Draft note: built this
-              after seeing how much NPS feedback goes unread because teams don't have time to dig
-              through it row by row, and wanting a tool that surfaces what actually matters instead of
-              averaging everything into one flat number.]
-            </p>
-          </section>
+        {/* The framework */}
+        <section className="rounded-2xl border border-border bg-muted p-6">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-brand-accent mb-3">The framework</h2>
+          <p className="text-[15.5px] leading-relaxed text-foreground">
+            Built on Rahul Vohra's product-market fit framework from Superhuman — segmenting responses the
+            way his engine does, and asking what promoters love and what passives need, instead of
+            averaging everyone's feedback into one flat number.
+          </p>
+        </section>
 
-          {/* The framework */}
-          <section className="space-y-4 rounded-2xl border border-border bg-card p-6">
-            <h2 className="text-2xl font-bold text-foreground">The framework</h2>
-            <p className="text-base leading-relaxed text-foreground">
-              Built on Rahul Vohra's product-market fit framework (Superhuman) — segmenting responses
-              the way his engine does, and asking what promoters love and what passives need, instead
-              of averaging everyone's feedback into one flat number.
-            </p>
-          </section>
+        {/* How it works */}
+        <section className="rounded-2xl border border-border bg-card p-6">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-brand-accent mb-3">How it works</h2>
+          <p className="text-[15.5px] leading-relaxed text-foreground">
+            Every theme you see is generated by an LLM reading real responses — never keyword-matched,
+            never rewritten. If a comment doesn't clearly fit a theme, it stays visible as unclustered
+            rather than force-fit.
+          </p>
+        </section>
 
-          {/* How it works */}
-          <section className="space-y-4 rounded-2xl border border-border bg-card p-6">
-            <h2 className="text-2xl font-bold text-foreground">How it works</h2>
-            <p className="text-base leading-relaxed text-foreground">
-              Every theme you see is generated by an LLM reading real responses — never
-              keyword-matched, never rewritten. If a comment doesn't clearly fit a theme, it stays
-              visible as unclustered rather than force-fit.
-            </p>
-          </section>
+        {/* Why I built this */}
+        <section className="rounded-2xl border border-border bg-muted p-6">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-brand-accent mb-3">Why I built this</h2>
+          <p className="text-[15px] leading-relaxed text-foreground">
+            I first ran into this framework while working with my founder, Vedant, at Quso.ai (formerly
+            vidyo.ai) — digging through NPS surveys and trying to figure out which action items actually
+            mattered. As a way of giving back to the CS community, and because I love vibe-coding things
+            into existence, I decided to build it into a real tool. It's still early and pretty limited
+            today, but there's a lot more planned. If you try it and something's missing (or broken), I'd
+            genuinely love to hear about it —{" "}
+            <a href="mailto:swabhig@gmail.com" className="text-brand-accent font-semibold hover:underline">
+              swabhig@gmail.com
+            </a>
+            .
+          </p>
+        </section>
 
-          {/* Builder card */}
-          <section className="rounded-2xl border border-border bg-card p-6">
-            <div className="flex items-center gap-4">
-              <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-muted text-lg font-semibold text-foreground">
-                S
-              </span>
-              <div>
-                <h2 className="text-lg font-semibold text-foreground">Swabhi</h2>
-                <p className="text-sm text-muted-foreground">Builder of getChimed</p>
+        {/* Builder card */}
+        <section className="rounded-2xl border border-border bg-card p-6 mt-2">
+          <div className="flex items-start gap-4">
+            <span className="flex size-14 shrink-0 items-center justify-center rounded-full border border-border bg-muted text-lg font-semibold text-foreground">
+              S
+            </span>
+            <div>
+              <h3 className="text-base font-bold text-foreground">Swabhi Gupta</h3>
+              <p className="text-[12.5px] text-muted-foreground mt-0.5">Part-time builder, full-time CX</p>
+            </div>
+          </div>
+          <p className="text-sm leading-relaxed text-muted-foreground mt-4">
+            6+ years in Customer Success across India, the Middle East, Singapore, North America, and
+            Canada. I've spent my career on the other side of surveys like this one — reading feedback,
+            defending roadmaps, and trying to tell signal from noise. Chime is what I wished I had. Built
+            solo, still evolving — if something looks off, it probably is. Tell me.
+          </p>
+
+          <div className="flex flex-col gap-4 mt-5 pt-5 border-t border-border">
+            <div>
+              <p className="text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                Worked at
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  ["Gupshup", "https://gupshup.io"],
+                  ["vidyo.ai", "https://vidyo.ai"],
+                  ["Motherson", "https://motherson.com"],
+                  ["Ekeekaran Ventures", "#"],
+                ].map(([label, href]) => (
+                  <a
+                    key={label}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[12.5px] font-semibold text-foreground border border-border rounded-full px-3 py-1.5 hover:border-brand-accent hover:text-brand-accent transition-colors"
+                  >
+                    {label}
+                  </a>
+                ))}
               </div>
             </div>
-            <p className="mt-4 text-sm leading-relaxed text-foreground">
-              Built solo, still evolving. If something looks off, it probably is — tell me. Feedback,
-              bugs, and feature requests are always welcome at{" "}
-              <a
-                href="mailto:swabhig@gmail.com"
-                className="font-medium text-brand-accent underline-offset-4 hover:underline"
-              >
-                swabhig@gmail.com
-              </a>
-              .
-            </p>
-            {/* Real photo, "Worked at" / "Part of" / "Connect" link chips — add once available */}
-          </section>
+            <div>
+              <p className="text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                Part of
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  ["Women of CS", "https://www.womenofcustomersuccess.com/"],
+                  ["CS Network", "#"],
+                  ["Success Hub", "https://www.successhubcommunity.com/"],
+                ].map(([label, href]) => (
+                  <a
+                    key={label}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[12.5px] font-semibold text-foreground border border-border rounded-full px-3 py-1.5 hover:border-brand-accent hover:text-brand-accent transition-colors"
+                  >
+                    {label}
+                  </a>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                Connect
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  ["LinkedIn", "https://linkedin.com/in/swabhi-gupta"],
+                  ["Twitter", "https://twitter.com/guptaswabhi"],
+                  ["GitHub", "https://github.com/swabhig"],
+                  ["Email", "mailto:swabhig@gmail.com"],
+                ].map(([label, href]) => (
+                  <a
+                    key={label}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[12.5px] font-semibold text-foreground border border-border rounded-full px-3 py-1.5 hover:border-brand-accent hover:text-brand-accent transition-colors"
+                  >
+                    {label}
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
 
-          {/* CTA */}
-          <section className="border-t border-border pt-10">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 text-base font-medium text-brand-accent underline-offset-4 hover:underline"
-            >
-              Start analyzing →
-            </Link>
-          </section>
-        </article>
+        {/* CTA */}
+        <Link
+          href="/"
+          className="mt-2 text-center rounded-xl bg-foreground text-background text-[15px] font-bold py-3.5 hover:opacity-90"
+        >
+          Start analyzing →
+        </Link>
+      </article>
+
+      <div className="mx-auto w-full max-w-[640px] px-6 pb-12 flex gap-4 text-xs text-muted-foreground">
+        <Link href="/privacy" className="hover:text-foreground">Privacy</Link>
+        <Link href="/terms" className="hover:text-foreground">Terms</Link>
       </div>
     </div>
   )
