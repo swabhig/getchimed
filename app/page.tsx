@@ -147,16 +147,18 @@ export default function Page() {
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar shell - always rendered off the upload screen, for guests and signed-in users alike */}
+        {/* Sidebar shell - hide on mobile, show on desktop */}
         {step !== "upload" && (
-          <Sidebar
-            user={user}
-            onSelectAnalysis={(analysis) => {
-              setAnalysis(analysis)
-              setStep("results")
-            }}
-            onSignOut={handleSignOut}
-          />
+          <div className="hidden lg:flex lg:flex-col">
+            <Sidebar
+              user={user}
+              onSelectAnalysis={(analysis) => {
+                setAnalysis(analysis)
+                setStep("results")
+              }}
+              onSignOut={handleSignOut}
+            />
+            </div>
         )}
 
         {/* Main content */}

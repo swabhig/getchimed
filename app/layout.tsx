@@ -41,9 +41,9 @@ export default function RootLayout({
         <ThemeProvider>
           <div className="flex-1">{children}</div>
           <footer className="border-t border-border bg-background shrink-0">
-            <div className="mx-auto max-w-5xl px-4 py-2 text-center text-xs text-muted-foreground">
-              <div className="flex flex-col items-center justify-center gap-2 sm:flex-row sm:gap-3">
-                <div>
+            <div className="mx-auto max-w-5xl px-3 sm:px-4 py-1.5 sm:py-2 text-center text-xs text-muted-foreground">
+              <div className="flex flex-col items-center justify-center gap-1 sm:gap-2 lg:gap-3 sm:flex-row">
+                <div className="text-xs sm:text-xs">
                   Methodology inspired by{' '}
                   <a
                     href="https://review.firstround.com/how-superhuman-built-an-engine-to-find-product-market-fit/"
@@ -54,21 +54,21 @@ export default function RootLayout({
                     Superhuman
                   </a>
                 </div>
-                <span className="hidden sm:inline">·</span>
+                <span className="hidden sm:inline text-xs">·</span>
                 <a
                   href="https://wa.me/+919810040184"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-medium text-foreground hover:underline"
+                  className="font-medium text-foreground hover:underline text-xs"
                 >
                   Feedback
                 </a>
-                <span>·</span>
-                <a href="/privacy" className="hover:text-foreground hover:underline">
+                <span className="text-xs">·</span>
+                <a href="/privacy" className="hover:text-foreground hover:underline text-xs">
                   Privacy
                 </a>
-                <span>·</span>
-                <a href="/terms" className="hover:text-foreground hover:underline">
+                <span className="text-xs">·</span>
+                <a href="/terms" className="hover:text-foreground hover:underline text-xs">
                   Terms
                 </a>
               </div>

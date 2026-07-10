@@ -316,28 +316,28 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8 flex flex-col">
+    <div className="mx-auto max-w-2xl px-4 py-6 sm:py-8 flex flex-col">
       {(status === "inserting" || status === "analyzing" || status === "benchmarking") && (
         <LoadingOverlay status={status} />
       )}
-      <header className="mb-8">
-        <div className="mb-6 flex items-center gap-3 animate-chime-rise">
-          <span className="inline-flex items-baseline text-lg font-bold tracking-tight text-foreground">
+      <header className="mb-6 sm:mb-8">
+        <div className="mb-4 sm:mb-6 flex items-center gap-3 animate-chime-rise">
+          <span className="inline-flex items-baseline text-base sm:text-lg font-bold tracking-tight text-foreground">
             Chime
             <span className="ml-0.5 size-1.5 rounded-full bg-brand-accent animate-chime-ripple" />
           </span>
-          <span className="inline-flex items-center px-3 py-1 rounded-full border border-border bg-muted text-xs font-medium text-muted-foreground">
+          <span className="inline-flex items-center px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border border-border bg-muted text-xs font-medium text-muted-foreground">
             MVP · BETA
           </span>
         </div>
         <h1
-          className="text-4xl font-extrabold tracking-tight text-foreground text-balance sm:text-5xl animate-chime-rise"
+          className="text-2xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground text-balance animate-chime-rise"
           style={{ animationDelay: "0.08s" }}
         >
           Know what actually matters to your customers.
         </h1>
         <p
-          className="mt-4 text-base leading-relaxed text-muted-foreground text-pretty max-w-lg animate-chime-rise"
+          className="mt-2 sm:mt-4 text-sm sm:text-base leading-relaxed text-muted-foreground text-pretty max-w-lg animate-chime-rise"
           style={{ animationDelay: "0.16s" }}
         >
           Upload your NPS survey responses. Extract 2–3 high-impact themes that reveal what truly drives satisfaction — without the noise.
@@ -346,11 +346,11 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
 
       {/* Trust line — sits directly above the upload control, not buried in a footer */}
       <div
-        className="mb-2 -mx-4 flex items-center gap-2.5 rounded-none bg-muted px-4 py-3 animate-chime-rise"
+        className="mb-2 sm:mb-2 -mx-4 flex items-start sm:items-center gap-2 sm:gap-2.5 rounded-none bg-muted px-4 py-2 sm:py-3 animate-chime-rise"
         style={{ animationDelay: "0.24s" }}
       >
-        <Info className="size-4 shrink-0 text-muted-foreground" />
-        <p className="text-xs leading-relaxed text-muted-foreground whitespace-nowrap">
+        <Info className="mt-0.5 sm:mt-0 size-3.5 sm:size-4 shrink-0 text-muted-foreground" />
+        <p className="text-xs sm:text-xs leading-snug sm:leading-relaxed text-muted-foreground">
           Used only for this analysis — never sold or used to train models.{" "}
           <Link href="/privacy" target="_blank" className="font-medium text-foreground underline underline-offset-2">
             Privacy Policy
@@ -359,7 +359,7 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
       </div>
 
       {/* Source toggle */}
-      <div className="mb-3 flex justify-center">
+      <div className="mb-2 sm:mb-3 flex justify-center">
         <div className="inline-flex rounded-lg border border-border bg-muted p-1">
           {(
             [
@@ -416,7 +416,7 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
               <div className="flex size-11 items-center justify-center rounded-full bg-muted">
                 <Loader2 className="size-5 animate-spin text-muted-foreground" />
               </div>
-              <p className="text-sm font-medium text-foreground">Parsing {fileName}��</p>
+              <p className="text-sm font-medium text-foreground">Parsing {fileName}���</p>
             </>
           ) : fileName && hasData ? (
             <>
