@@ -258,6 +258,11 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
       <header className="mb-12">
+        <div className="mb-4">
+          <span className="inline-flex items-center px-3 py-1 rounded-full border border-border bg-muted text-xs font-medium text-foreground">
+            MVP • Beta Stage
+          </span>
+        </div>
         <h1 className="text-4xl font-bold tracking-tight text-foreground text-balance sm:text-5xl">
           Analyze your NPS feedback.
         </h1>
@@ -583,6 +588,13 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
                   console.error('Sign in error:', error)
                   setGoogleAuthLoading(false)
                   setError('Failed to sign in. Please try again.')
+                } else {
+                  // Auth successful - proceed with analysis
+                  setShowGoogleAuth(false)
+                  if (pendingAnalysis) {
+                    onAnalyze(pendingAnalysis)
+                    setPendingAnalysis(null)
+                  }
                 }
               }}
               disabled={googleAuthLoading}
