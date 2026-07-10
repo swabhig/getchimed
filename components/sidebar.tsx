@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { LogOut, MessageCircle, BookOpen } from 'lucide-react'
 import { AnalysisResult } from '@/lib/nps-data'
+import { getFirstName, getAvatarUrl } from '@/lib/user'
 
 interface PastAnalysis {
   id: string
@@ -95,6 +96,27 @@ export function Sidebar({ user, onSelectAnalysis, onSignOut, currentAnalysisId }
 
       {/* Footer Links */}
       <div className="p-4 border-t border-border space-y-2">
+        {/* Profile — click to sign out */}
+        <button
+          onClick={onSignOut}
+          title="Sign out"
+          className="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-muted transition-colors"
+        >
+          {getAvatarUrl(user) ? (
+            <img
+              src={getAvatarUrl(user) as string}
+              alt=""
+              className="size-7 rounded-full object-cover"
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            <span className="flex size-7 items-center justify-center rounded-full bg-muted text-xs font-semibold text-foreground uppercase">
+              {getFirstName(user).charAt(0)}
+            </span>
+          )}
+          <span className="text-sm font-medium text-foreground truncate">{getFirstName(user)}</span>
+        </button>
+
         <a
           href="https://wa.me/+919810040184"
           target="_blank"

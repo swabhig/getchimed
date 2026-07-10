@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { ArrowRight, X, Bug, Zap, LifeBuoy, TrendingUp, Wrench, AlertCircle, Info } from "lucide-react"
+import { useState, useEffect } from "react"
+import { ArrowRight, X, Bug, Zap, LifeBuoy, TrendingUp, Wrench, AlertCircle, Info, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { WordCloud } from "@/components/word-cloud"
@@ -25,6 +25,16 @@ const flagMeta: Record<FlagCategory, { label: string; icon: typeof Bug; classNam
   support: { label: "Support", icon: LifeBuoy, className: "bg-muted text-muted-foreground" },
 }
 
+const RESPONSES_PER_PAGE = 25
+
+function responsesToCsv(data: AnalysisResult): string {
+  const rows: string[][] = [["score", "main_benefit", "improvement", "persona"]]
+  for (const r of data.responses) {
+    rows.push([String(r.score), r.main_benefit ?? "", r.improvement ?? "", r.persona ?? ""])
+  }
+  return rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n")
+}
+
 function SectionHeader({ title, tooltip }: { title: string; tooltip: string }) {
   return (
     <div className="flex items-center gap-2">
@@ -42,6 +52,7 @@ function SectionHeader({ title, tooltip }: { title: string; tooltip: string }) {
 
 export function ResultsScreen({ data, onExport, onReset }: ResultsScreenProps) {
   const [activeTheme, setActiveTheme] = useState<Theme | null>(null)
+  const [page, setPage] = useState(0)
 
   const promoterThemes = data.themes.filter((t) => t.segment === "promoter")
   const passiveThemes = data.themes.filter((t) => t.segment === "passive")
@@ -49,6 +60,28 @@ export function ResultsScreen({ data, onExport, onReset }: ResultsScreenProps) {
   const visibleRows = activeTheme
     ? data.responses.filter((r) => activeTheme.rowRefs.includes(r.id))
     : data.responses
+
+  // Reset to first page whenever the filter or dataset changes
+  useEffect(() => {
+    setPage(0)
+  }, [activeTheme, data])
+
+  const totalPages = Math.max(1, Math.ceil(visibleRows.length / RESPONSES_PER_PAGE))
+  const currentPage = Math.min(page, totalPages - 1)
+  const pagedRows = visibleRows.slice(
+    currentPage * RESPONSES_PER_PAGE,
+    currentPage * RESPONSES_PER_PAGE + RESPONSES_PER_PAGE,
+  )
+
+  function downloadFullCsv() {
+    const blob = new Blob([responsesToCsv(data)], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = "nps-responses.csv"
+    link.click()
+    URL.revokeObjectURL(url)
+  }
 
   function handleSelect(theme: Theme) {
     setActiveTheme((cur) => (cur?.label === theme.label ? null : theme))
@@ -176,16 +209,28 @@ export function ResultsScreen({ data, onExport, onReset }: ResultsScreenProps) {
           <span className="text-muted-foreground transition-transform group-open:rotate-180">▼</span>
         </summary>
         <div className="mt-3">
-          {activeTheme && (
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            {activeTheme ? (
+              <button
+                type="button"
+                onClick={() => setActiveTheme(null)}
+                className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted/70"
+              >
+                Filtered by "{activeTheme.label}"
+                <X className="size-3.5" />
+              </button>
+            ) : (
+              <span />
+            )}
             <button
               type="button"
-              onClick={() => setActiveTheme(null)}
-              className="mb-4 inline-flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted/70"
+              onClick={downloadFullCsv}
+              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
             >
-              Filtered by "{activeTheme.label}"
-              <X className="size-3.5" />
+              <Download className="size-3.5" />
+              Download full CSV
             </button>
-          )}
+          </div>
           <div className="overflow-x-auto rounded-lg border border-border">
             <table className="w-full text-sm">
               <thead>
@@ -197,7 +242,7 @@ export function ResultsScreen({ data, onExport, onReset }: ResultsScreenProps) {
                 </tr>
               </thead>
               <tbody>
-                {visibleRows.map((row) => (
+                {pagedRows.map((row) => (
                   <tr key={row.id} className="border-b border-border last:border-0">
                     <td className="px-4 py-2.5">
                       <span
@@ -228,6 +273,32 @@ export function ResultsScreen({ data, onExport, onReset }: ResultsScreenProps) {
               </tbody>
             </table>
           </div>
+
+          {visibleRows.length > RESPONSES_PER_PAGE && (
+            <div className="mt-3 flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">
+                Page {currentPage + 1} of {totalPages}
+              </span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  disabled={currentPage === 0}
+                  className="rounded-md border border-border px-3 py-1.5 font-medium text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                  disabled={currentPage >= totalPages - 1}
+                  className="rounded-md border border-border px-3 py-1.5 font-medium text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </details>
 
