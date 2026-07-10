@@ -99,7 +99,7 @@ export function UploadScreen({ onAnalyze }: UploadScreenProps) {
         const rows = results.data.filter((r) => Object.keys(r).length > 0)
         setColumns(headers)
         setRawRows(rows)
-        setMapping({ score: "", comment: "", persona: "" })
+        setMapping({ score: "", main_benefit: "", improvement: "", persona: "" })
         setStatus("idle")
         if (rows.length === 0) setError("No rows found in this CSV.")
       },
