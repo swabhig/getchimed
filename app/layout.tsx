@@ -44,8 +44,21 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`bg-background ${geistSans.variable} ${geistMono.variable}`}>
-      <body className="font-sans antialiased">
-        {children}
+      <body className="flex min-h-svh flex-col font-sans antialiased">
+        <div className="flex-1">{children}</div>
+        <footer className="border-t border-border bg-background">
+          <div className="mx-auto max-w-5xl px-4 py-6 text-center text-xs text-muted-foreground">
+            Methodology inspired by{' '}
+            <a
+              href="https://review.firstround.com/how-superhuman-built-an-engine-to-find-product-market-fit/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-foreground underline-offset-4 hover:underline"
+            >
+              Rahul Vohra&apos;s PMF engine at Superhuman
+            </a>
+          </div>
+        </footer>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
