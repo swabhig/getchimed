@@ -346,12 +346,12 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
 
       {/* Trust line — sits directly above the upload control, not buried in a footer */}
       <div
-        className="mb-6 flex items-start gap-2.5 rounded-xl bg-muted px-4 py-3 animate-chime-rise"
+        className="mb-6 flex items-center gap-2.5 rounded-xl bg-muted px-4 py-3 animate-chime-rise"
         style={{ animationDelay: "0.24s" }}
       >
-        <Info className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+        <Info className="size-4 shrink-0 text-muted-foreground" />
         <p className="text-xs leading-relaxed text-muted-foreground">
-          Your responses are only used to run this analysis. We never sell your data or use it to train models.{" "}
+          Used only for this analysis — never sold or used to train models.{" "}
           <Link href="/privacy" target="_blank" className="font-medium text-foreground underline underline-offset-2">
             Privacy Policy
           </Link>
@@ -359,26 +359,30 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
       </div>
 
       {/* Source toggle */}
-      <div className="mb-4 inline-flex rounded-lg border border-border bg-muted p-1">
-        {(
-          [
-            { key: "file", label: "Upload CSV", icon: Upload },
-            { key: "sheet", label: "Google Sheet link", icon: Link2 },
-          ] as const
-        ).map(({ key, label, icon: Icon }) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => setSource(key)}
-            className={cn(
-              "flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-              source === key ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            <Icon className="size-4" />
-            {label}
-          </button>
-        ))}
+      <div className="mb-4 flex justify-center">
+        <div className="inline-flex rounded-lg border border-border bg-muted p-1">
+          {(
+            [
+              { key: "file", label: "Upload CSV", icon: Upload },
+              { key: "sheet", label: "Google Sheet link", icon: Link2 },
+            ] as const
+          ).map(({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setSource(key)}
+              className={cn(
+                "flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                source === key
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Icon className="size-4" />
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Source input */}
