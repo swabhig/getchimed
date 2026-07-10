@@ -64,8 +64,8 @@ export default function TermsPage() {
           <h2 className="text-lg font-medium text-foreground mb-2">Contact</h2>
           <p>
             Questions? Email{" "}
-            <a href="mailto:swabhig@gmail.com" className="underline underline-offset-2">
-              swabhig@gmail.com
+            <a href="mailto:hello@getchimed.site" className="underline underline-offset-2">
+              hello@getchimed.site
             </a>
             .
           </p>
