@@ -10,7 +10,6 @@ import { UploadScreen } from "@/components/upload-screen"
 import { ResultsScreen } from "@/components/results-screen"
 import { ExportScreen } from "@/components/export-screen"
 import { Sidebar } from "@/components/sidebar"
-import { Footer } from "@/components/footer"
 import { mockAnalysis, type AnalysisResult } from "@/lib/nps-data"
 
 type Step = "upload" | "results" | "export"
@@ -180,8 +179,6 @@ export default function Page() {
             />
           )}
           {step === "export" && <ExportScreen data={analysis} onBack={() => setStep("results")} />}
-
-          <Footer />
         </main>
       </div>
     </div>

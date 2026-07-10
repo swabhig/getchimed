@@ -41,16 +41,37 @@ export default function RootLayout({
         <ThemeProvider>
           <div className="flex-1">{children}</div>
           <footer className="border-t border-border bg-background">
-            <div className="mx-auto max-w-5xl px-4 py-6 text-center text-xs text-muted-foreground">
-              Methodology inspired by{' '}
-              <a
-                href="https://review.firstround.com/how-superhuman-built-an-engine-to-find-product-market-fit/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-medium text-foreground underline-offset-4 hover:underline"
-              >
-                Rahul Vohra&apos;s PMF engine at Superhuman
-              </a>
+            <div className="mx-auto max-w-5xl px-4 py-4 text-center text-xs text-muted-foreground">
+              <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
+                <div>
+                  Methodology inspired by{' '}
+                  <a
+                    href="https://review.firstround.com/how-superhuman-built-an-engine-to-find-product-market-fit/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-foreground underline-offset-4 hover:underline"
+                  >
+                    Superhuman
+                  </a>
+                </div>
+                <span className="hidden sm:inline">·</span>
+                <a
+                  href="https://wa.me/+919810040184"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-foreground hover:underline"
+                >
+                  Feedback
+                </a>
+                <span>·</span>
+                <a href="/privacy" className="hover:text-foreground hover:underline">
+                  Privacy
+                </a>
+                <span>·</span>
+                <a href="/terms" className="hover:text-foreground hover:underline">
+                  Terms
+                </a>
+              </div>
             </div>
           </footer>
         </ThemeProvider>

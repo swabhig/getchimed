@@ -316,11 +316,11 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-10">
+    <div className="mx-auto max-w-2xl px-4 py-6 flex flex-col">
       {(status === "inserting" || status === "analyzing" || status === "benchmarking") && (
         <LoadingOverlay status={status} />
       )}
-      <header className="mb-10">
+      <header className="mb-6">
         <div className="mb-4 flex items-center gap-3 animate-chime-rise">
           <span className="inline-flex items-baseline text-lg font-bold tracking-tight text-foreground">
             Chime
@@ -331,13 +331,13 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
           </span>
         </div>
         <h1
-          className="text-4xl font-extrabold tracking-tight text-foreground text-balance sm:text-5xl animate-chime-rise"
+          className="text-3xl font-extrabold tracking-tight text-foreground text-balance sm:text-4xl animate-chime-rise"
           style={{ animationDelay: "0.08s" }}
         >
-          Know what actually matters to your customers.
+          Know what matters to your customers.
         </h1>
         <p
-          className="mt-4 text-base leading-relaxed text-muted-foreground text-pretty max-w-lg animate-chime-rise"
+          className="mt-2 text-sm leading-relaxed text-muted-foreground text-pretty max-w-lg animate-chime-rise"
           style={{ animationDelay: "0.16s" }}
         >
           Upload your feedback. Get the 2–3 things worth acting on — not the noise.
@@ -346,12 +346,12 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
 
       {/* Trust line — sits directly above the upload control, not buried in a footer */}
       <div
-        className="mb-6 flex items-center gap-2.5 rounded-xl bg-muted px-4 py-3 animate-chime-rise"
+        className="mb-4 -mx-4 flex items-center gap-2.5 rounded-none bg-muted px-4 py-3 animate-chime-rise"
         style={{ animationDelay: "0.24s" }}
       >
         <Info className="size-4 shrink-0 text-muted-foreground" />
-        <p className="flex-1 text-xs leading-relaxed text-muted-foreground">
-          Your responses are only used to run this analysis — never sold, shared, or used to train models.{" "}
+        <p className="text-xs leading-relaxed text-muted-foreground whitespace-nowrap">
+          Used only for this analysis — never sold or used to train models.{" "}
           <Link href="/privacy" target="_blank" className="font-medium text-foreground underline underline-offset-2">
             Privacy Policy
           </Link>
