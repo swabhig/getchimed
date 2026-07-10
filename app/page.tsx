@@ -131,8 +131,8 @@ export default function Page() {
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar - show only when user is authenticated and not on upload screen */}
-        {user && step !== "upload" && (
+        {/* Sidebar shell - always rendered off the upload screen, for guests and signed-in users alike */}
+        {step !== "upload" && (
           <Sidebar
             user={user}
             onSelectAnalysis={(analysis) => {
