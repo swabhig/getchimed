@@ -321,7 +321,7 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
         <LoadingOverlay status={status} />
       )}
       <header className="mb-8">
-        <div className="mb-4 flex items-center gap-3 animate-chime-rise">
+        <div className="mb-6 flex items-center gap-3 animate-chime-rise">
           <span className="inline-flex items-baseline text-lg font-bold tracking-tight text-foreground">
             Chime
             <span className="ml-0.5 size-1.5 rounded-full bg-brand-accent animate-chime-ripple" />
@@ -346,7 +346,7 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
 
       {/* Trust line — sits directly above the upload control, not buried in a footer */}
       <div
-        className="mb-4 -mx-4 flex items-center gap-2.5 rounded-none bg-muted px-4 py-3 animate-chime-rise"
+        className="mb-2 -mx-4 flex items-center gap-2.5 rounded-none bg-muted px-4 py-3 animate-chime-rise"
         style={{ animationDelay: "0.24s" }}
       >
         <Info className="size-4 shrink-0 text-muted-foreground" />
@@ -359,7 +359,7 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
       </div>
 
       {/* Source toggle */}
-      <div className="mb-4 flex justify-center">
+      <div className="mb-3 flex justify-center">
         <div className="inline-flex rounded-lg border border-border bg-muted p-1">
           {(
             [
