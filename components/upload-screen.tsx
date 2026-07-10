@@ -79,6 +79,7 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
   })
   const [showGoogleAuth, setShowGoogleAuth] = useState(false)
   const [googleAuthLoading, setGoogleAuthLoading] = useState(false)
+  const [pendingAnalysis, setPendingAnalysis] = useState<AnalysisResult | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const hasData = columns.length > 0 && rawRows.length > 0
@@ -122,12 +123,6 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
   }
 
   async function handleAnalyze() {
-    // Show Google auth if user is not authenticated
-    if (!user) {
-      setShowGoogleAuth(true)
-      return
-    }
-
     setError(null)
     setStatus("inserting")
 
@@ -230,7 +225,16 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
       
       analysis.context = context
       
-      // Save analysis + context to Supabase
+      setStatus("idle")
+      
+      // If user is not authenticated, show Google auth modal with the results after sign-in
+      if (!user) {
+        setPendingAnalysis(analysis)
+        setShowGoogleAuth(true)
+        return
+      }
+      
+      // Save analysis + context to Supabase for authenticated users
       try {
         const supabase = createClient()
         await supabase.from("analyses").insert({
@@ -244,7 +248,6 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
         // Don't block the flow if save fails
       }
       
-      setStatus("idle")
       onAnalyze(analysis)
     } catch (err) {
       setStatus("idle")
@@ -518,11 +521,10 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
             "Map a score and comment column to continue"
           )}
         </p>
-        <Button 
-          size="lg" 
-          disabled={!canAnalyze} 
+        <button
+          disabled={!canAnalyze}
           onClick={handleAnalyze}
-          className="bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+          className="inline-flex items-center justify-center gap-2 rounded-lg border-0 bg-black px-4 py-2 text-sm font-medium text-white transition-all hover:bg-black/90 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {status === "inserting" ? (
             <>
@@ -545,18 +547,23 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
               <ArrowRight className="size-4" />
             </>
           )}
-        </Button>
+        </button>
       </div>
 
       {/* Google Auth Modal */}
       {showGoogleAuth && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="w-full max-w-sm rounded-lg bg-background border border-border shadow-2xl space-y-6 p-6">
-            <div className="space-y-2 text-center">
-              <h2 className="text-2xl font-bold text-foreground">Sign in to continue</h2>
-              <p className="text-sm text-muted-foreground">
-                We need to authenticate you before analyzing your data.
-              </p>
+            <div className="space-y-3 text-center">
+              <h2 className="text-2xl font-bold text-foreground">Save your insights</h2>
+              <div className="space-y-2">
+                <p className="text-sm text-foreground">
+                  Sign in with Google to save up to 4 NPS surveys with getChimed.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Without signing in, your analysis will be visible now but won&apos;t be saved for later.
+                </p>
+              </div>
             </div>
 
             <button
@@ -615,14 +622,18 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
               onClick={() => {
                 setShowGoogleAuth(false)
                 setGoogleAuthLoading(false)
+                if (pendingAnalysis) {
+                  onAnalyze(pendingAnalysis)
+                  setPendingAnalysis(null)
+                }
               }}
               className="w-full rounded-lg border border-border px-6 py-3 font-medium text-foreground hover:bg-muted transition-colors"
             >
-              Cancel
+              Continue without saving
             </button>
 
             <p className="text-xs text-center text-muted-foreground">
-              We use your first name to personalize your experience.
+              Your analysis is ready to view. Sign in to save it permanently.
             </p>
           </div>
         </div>
