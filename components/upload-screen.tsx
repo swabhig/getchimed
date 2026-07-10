@@ -322,9 +322,9 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
       )}
       <header className="mb-10">
         <div className="mb-4 flex items-center gap-3 animate-chime-rise">
-          <span className="inline-flex items-center text-lg font-bold tracking-tight text-foreground">
+          <span className="inline-flex items-end text-lg font-bold tracking-tight text-foreground">
             Chime
-            <span className="ml-0.5 size-1.5 rounded-full bg-brand-accent animate-chime-ripple" />
+            <span className="mb-0.5 ml-0.5 size-1.5 rounded-full bg-brand-accent animate-chime-ripple" />
           </span>
           <span className="inline-flex items-center px-3 py-1 rounded-full border border-border bg-muted text-xs font-medium text-muted-foreground">
             MVP · BETA

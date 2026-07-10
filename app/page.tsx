@@ -92,9 +92,9 @@ export default function Page() {
         <div className="flex items-center justify-between gap-4 px-6 py-4">
           <div className="flex items-center gap-2 font-bold text-lg tracking-tight text-foreground">
             <img src="/icons/chime-icon-192.png" alt="Chime logo" className="size-7 rounded-md" />
-            <span className="inline-flex items-center">
+            <span className="inline-flex items-end">
               Chime
-              <span className="ml-0.5 size-1.5 rounded-full bg-brand-accent" />
+              <span className="mb-0.5 ml-0.5 size-1.5 rounded-full bg-brand-accent" />
             </span>
           </div>
           
