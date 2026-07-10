@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { useTheme } from 'next-themes'
 import { createClient } from '@/lib/supabase/client'
-import { LogOut, MessageCircle, BookOpen, LogIn } from 'lucide-react'
+import { LogOut, MessageCircle, BookOpen, LogIn, Sun, Moon } from 'lucide-react'
 import { AnalysisResult } from '@/lib/nps-data'
 import { getFirstName, getAvatarUrl } from '@/lib/user'
 
@@ -24,6 +25,20 @@ export function Sidebar({ user, onSelectAnalysis, onSignOut, currentAnalysisId }
   const [analyses, setAnalyses] = useState<PastAnalysis[]>([])
   const [loading, setLoading] = useState(true)
   const [signingIn, setSigningIn] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const { theme, setTheme } = useTheme()
+
+  useEffect(() => {
+    if (!menuOpen) return
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [menuOpen])
 
   // Same Google popup sign-in flow used elsewhere (upload screen). The
   // opener window's onAuthStateChange listener (in page.tsx) picks up the
@@ -139,27 +154,61 @@ export function Sidebar({ user, onSelectAnalysis, onSignOut, currentAnalysisId }
 
       {/* Footer Links */}
       <div className="p-4 border-t border-border space-y-2">
-        {/* Profile (signed in) — click to sign out */}
+        {/* Profile (signed in) — click opens a dropdown, doesn't sign out directly */}
         {user && (
-          <button
-            onClick={onSignOut}
-            title="Sign out"
-            className="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-muted transition-colors"
-          >
-            {getAvatarUrl(user) ? (
-              <img
-                src={getAvatarUrl(user) as string}
-                alt=""
-                className="size-7 rounded-full object-cover"
-                referrerPolicy="no-referrer"
-              />
-            ) : (
-              <span className="flex size-7 items-center justify-center rounded-full bg-muted text-xs font-semibold text-foreground uppercase">
-                {getFirstName(user).charAt(0)}
-              </span>
+          <div ref={menuRef} className="relative">
+            {menuOpen && (
+              <div className="absolute bottom-full left-0 mb-2 w-full rounded-lg border border-border bg-background shadow-lg py-1 z-10">
+                <Link
+                  href="/about"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                >
+                  <BookOpen className="size-4" />
+                  Methodology
+                </Link>
+                <button
+                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                >
+                  {theme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}
+                  {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+                </button>
+                <button
+                  onClick={() => {
+                    setMenuOpen(false)
+                    onSignOut()
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                >
+                  <LogOut className="size-4" />
+                  Sign out
+                </button>
+              </div>
             )}
-            <span className="text-sm font-medium text-foreground truncate">{getFirstName(user)}</span>
-          </button>
+            <button
+              onClick={() => setMenuOpen((v) => !v)}
+              title={getFirstName(user)}
+              aria-expanded={menuOpen}
+              className="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-muted transition-colors"
+            >
+              {getAvatarUrl(user) ? (
+                <img
+                  src={getAvatarUrl(user) as string}
+                  alt=""
+                  className="size-7 rounded-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <span className="flex size-7 items-center justify-center rounded-full bg-muted text-xs font-semibold text-foreground uppercase">
+                  {getFirstName(user).charAt(0)}
+                </span>
+              )}
+              <span className="text-sm font-medium text-foreground truncate">{getFirstName(user)}</span>
+            </button>
+          </div>
         )}
 
         {/* Sign in (guest) */}
@@ -188,22 +237,17 @@ export function Sidebar({ user, onSelectAnalysis, onSignOut, currentAnalysisId }
           WhatsApp
         </a>
 
-        <Link
-          href="/about"
-          className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-        >
-          <BookOpen className="size-4" />
-          Methodology
-        </Link>
-
-        {user && (
-          <button
-            onClick={onSignOut}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        {/* Guests still see a Methodology link directly, since they have no profile dropdown */}
+        {!user && (
+          <Link
+            href="/about"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
-            <LogOut className="size-4" />
-            Sign out
-          </button>
+            <BookOpen className="size-4" />
+            Methodology
+          </Link>
         )}
       </div>
     </aside>

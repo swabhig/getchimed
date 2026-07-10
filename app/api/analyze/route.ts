@@ -98,6 +98,17 @@ export async function POST(req: NextRequest) {
       detractorRows: DetractorCommentInput[]
     } = body
 
+    // Visibility for debugging — if a segment comes back with zero themes,
+    // check these counts first to rule out empty/near-empty input before
+    // suspecting the LLM call itself.
+    console.log("[chime] analyze input sizes:", {
+      promoterMainBenefit: promoterMainBenefit.length,
+      passiveImprovement: passiveImprovement.length,
+      detractorRows: detractorRows.length,
+      promoterNonEmpty: promoterMainBenefit.filter((r) => r.comment.trim().length > 0).length,
+      passiveNonEmpty: passiveImprovement.filter((r) => r.comment.trim().length > 0).length,
+    })
+
     const [promoterResult, passiveResult, detractorResult] = await Promise.all([
       generateObject({
         model: MODEL,
@@ -118,6 +129,12 @@ export async function POST(req: NextRequest) {
         prompt: JSON.stringify(detractorRows),
       }),
     ])
+
+    console.log("[chime] analyze output sizes:", {
+      promoterThemes: promoterResult.object.themes.length,
+      passiveThemes: passiveResult.object.themes.length,
+      detractorFlags: detractorResult.object.flags.length,
+    })
 
     const attachMetadata = (result: z.infer<typeof clusterSchema>, segment: "promoter" | "passive") =>
       result.themes.map((theme) => ({

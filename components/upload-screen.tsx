@@ -122,6 +122,41 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
     setMapping((m) => ({ ...m, [key]: v }))
   }
 
+  // Checks the mapped data for common bad-mapping problems (e.g. reusing an
+  // old CSV with fewer columns than expected, or picking the wrong column by
+  // accident) before it reaches Supabase or the LLM. Returns an error string
+  // if something looks wrong, or null if the data looks usable.
+  function validateMappedRows(
+    mapped: { score: number; main_benefit: string; improvement: string; persona: string }[],
+    totalRawRows: number,
+  ): string | null {
+    const scoreValidRatio = mapped.length / Math.max(totalRawRows, 1)
+    if (scoreValidRatio < 0.5) {
+      return `Only ${mapped.length} of ${totalRawRows} rows had a valid numeric score (0-10) in the selected column. Double-check you mapped the right column for Score.`
+    }
+
+    const nonEmpty = (field: "main_benefit" | "improvement") =>
+      mapped.filter((r) => r[field].trim().length > 0).length
+
+    const mainBenefitRatio = nonEmpty("main_benefit") / mapped.length
+    const improvementRatio = nonEmpty("improvement") / mapped.length
+
+    if (mainBenefitRatio < 0.5) {
+      return `The "Main benefit" column is empty for most rows (${Math.round(mainBenefitRatio * 100)}% filled). Check that you selected the right column — if your CSV only has one combined comment column, you'll need separate Main benefit and Improvement columns for accurate analysis.`
+    }
+    if (improvementRatio < 0.5) {
+      return `The "Improvement" column is empty for most rows (${Math.round(improvementRatio * 100)}% filled). Check that you selected the right column — if your CSV only has one combined comment column, you'll need separate Main benefit and Improvement columns for accurate analysis.`
+    }
+
+    // Same column accidentally mapped to both fields — not necessarily wrong,
+    // but worth catching since it usually means the CSV lacks the second field.
+    if (mapping.main_benefit === mapping.improvement) {
+      return `Main benefit and Improvement are both mapped to the same column. Select two different columns so promoter and passive feedback can be analyzed separately.`
+    }
+
+    return null
+  }
+
   async function handleAnalyze() {
     setError(null)
     setStatus("inserting")
@@ -143,6 +178,17 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
     if (mapped.length === 0) {
       setStatus("idle")
       setError("No rows had a valid numeric score in the selected column.")
+      return
+    }
+
+    // Pre-flight validation — catch bad column mapping BEFORE the Supabase
+    // insert and LLM calls, since those cost money and shouldn't run on
+    // clearly broken data (e.g. reusing an old CSV that only had one combined
+    // comment column, leaving "Improvement" mapped to something blank).
+    const validationError = validateMappedRows(mapped, rawRows.length)
+    if (validationError) {
+      setStatus("idle")
+      setError(validationError)
       return
     }
 
