@@ -401,37 +401,37 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6 sm:py-8 flex flex-col">
+    <div className="mx-auto max-w-2xl px-4 py-5 sm:py-6 flex flex-col">
       {(status === "inserting" || status === "analyzing" || status === "benchmarking") && (
         <LoadingOverlay status={status} firstName={user ? getFirstName(user) : undefined} />
       )}
-      <header className="mb-6 sm:mb-8">
-        <div className="mb-4 sm:mb-6 flex items-center gap-3 animate-chime-rise">
+      <header className="mb-5 sm:mb-6">
+        <div className="mb-3 sm:mb-4 flex items-center gap-3 animate-chime-rise">
           <span className="inline-flex items-center px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border border-border bg-muted text-xs font-medium text-muted-foreground">
             MVP · BETA
           </span>
         </div>
         <h1
-          className="text-2xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground text-balance animate-chime-rise"
+          className="text-2xl sm:text-4xl lg:text-[2.75rem] font-extrabold tracking-tight text-foreground text-balance animate-chime-rise"
           style={{ animationDelay: "0.08s" }}
         >
           Know what actually matters to your customers.
         </h1>
         <p
-          className="mt-2 sm:mt-4 text-sm sm:text-base leading-relaxed text-muted-foreground text-pretty max-w-lg animate-chime-rise"
+          className="mt-2 sm:mt-3 text-sm sm:text-base leading-relaxed text-muted-foreground text-pretty max-w-lg animate-chime-rise"
           style={{ animationDelay: "0.16s" }}
         >
           Upload your NPS survey responses. Extract 2–3 high-impact themes that reveal what truly drives satisfaction — without the noise.
         </p>
       </header>
 
-      {/* Trust line — sits directly above the upload control, not buried in a footer */}
+      {/* Trust line — same rounded-card language as the rest of the page, not a full-bleed strip */}
       <div
-        className="mb-2 sm:mb-2 -mx-4 flex items-start sm:items-center gap-2 sm:gap-2.5 rounded-none bg-muted px-4 py-2 sm:py-3 animate-chime-rise"
+        className="mb-3 sm:mb-4 flex items-center gap-2.5 rounded-xl bg-muted px-4 py-2.5 animate-chime-rise"
         style={{ animationDelay: "0.24s" }}
       >
-        <Info className="mt-0.5 sm:mt-0 size-3.5 sm:size-4 shrink-0 text-muted-foreground" />
-        <p className="text-xs sm:text-xs leading-snug sm:leading-relaxed text-muted-foreground">
+        <Info className="size-4 shrink-0 text-muted-foreground" />
+        <p className="text-xs leading-snug text-muted-foreground">
           Used only for this analysis — never sold or used to train models.{" "}
           <Link href="/privacy" target="_blank" className="font-medium text-foreground underline underline-offset-2">
             Privacy Policy
