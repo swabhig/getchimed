@@ -5,6 +5,7 @@ import { ArrowRight, X, Bug, Zap, LifeBuoy, TrendingUp, Wrench, Info, Download, 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { WordCloud } from "@/components/word-cloud"
+import { getFirstName } from "@/lib/user"
 import type { AnalysisResult, FlagCategory, Theme, Flag as FlagType } from "@/lib/nps-data"
 
 // Kept lucide-react icons rather than removing them for plain CSS shapes —
@@ -218,6 +219,9 @@ export function ResultsScreen({ data, onExport, onReset, user }: ResultsScreenPr
 
       {/* HERO */}
       <header className="mb-10 flex flex-col items-center text-center">
+        {user && (
+          <p className="mb-1.5 text-sm font-medium text-foreground">Nice work, {getFirstName(user)} 👋</p>
+        )}
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
           Based on {data.responses.length} responses
         </p>

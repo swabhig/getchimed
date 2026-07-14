@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/client"
 import { LoadingOverlay } from "@/components/loading-overlay"
+import { getFirstName } from "@/lib/user"
 import { connectGoogleDrive } from "@/lib/google-drive-client"
 import { openGoogleSheetPicker } from "@/lib/google-picker"
 import { assembleAnalysis, segmentRows, type AnalysisResult, type ClusterResult, type ResponseRow, type BenchmarkContext, type BusinessType, type Model, type SurveyFrequency } from "@/lib/nps-data"
@@ -402,7 +403,7 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 sm:py-8 flex flex-col">
       {(status === "inserting" || status === "analyzing" || status === "benchmarking") && (
-        <LoadingOverlay status={status} />
+        <LoadingOverlay status={status} firstName={user ? getFirstName(user) : undefined} />
       )}
       <header className="mb-6 sm:mb-8">
         <div className="mb-4 sm:mb-6 flex items-center gap-3 animate-chime-rise">

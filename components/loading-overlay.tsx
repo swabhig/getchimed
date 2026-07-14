@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils"
 
 interface LoadingOverlayProps {
   status: "inserting" | "analyzing" | "benchmarking"
+  firstName?: string
 }
 
 const steps = [
@@ -19,13 +20,15 @@ const stepOrder: Record<string, number> = { inserting: 0, analyzing: 1, benchmar
 // its 3 steps on a fixed timer), this is wired to the real status coming
 // from upload-screen.tsx's actual request sequence — each step lights up
 // only once that request has genuinely started/completed.
-export function LoadingOverlay({ status }: LoadingOverlayProps) {
+export function LoadingOverlay({ status, firstName }: LoadingOverlayProps) {
   const currentIndex = stepOrder[status] ?? 0
 
   return (
     <div className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm">
       <div className="size-10 animate-spin rounded-full border-2 border-muted border-t-foreground" />
-      <p className="mt-5 text-sm font-medium text-foreground">Reading your responses…</p>
+      <p className="mt-5 text-sm font-medium text-foreground">
+        {firstName ? `Reading your responses, ${firstName}…` : "Reading your responses…"}
+      </p>
       <ul className="mt-6 flex flex-col gap-2">
         {steps.map((step, i) => (
           <li

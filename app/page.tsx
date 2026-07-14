@@ -11,6 +11,7 @@ import { ResultsScreen } from "@/components/results-screen"
 import { ExportScreen } from "@/components/export-screen"
 import { Sidebar } from "@/components/sidebar"
 import { mockAnalysis, type AnalysisResult } from "@/lib/nps-data"
+import { getFirstName } from "@/lib/user"
 
 type Step = "upload" | "results" | "export"
 
@@ -24,6 +25,7 @@ export default function Page() {
   const [step, setStep] = useState<Step>("upload")
   const [analysis, setAnalysis] = useState<AnalysisResult>(mockAnalysis)
   const [user, setUser] = useState<any>(null)
+  const [signingIn, setSigningIn] = useState(false)
   const activeIndex = steps.findIndex((s) => s.key === step)
   const lastSavedRef = useRef<AnalysisResult | null>(null)
   const { resolvedTheme, setTheme } = useTheme()
@@ -85,6 +87,34 @@ export default function Page() {
     setStep("upload")
   }
 
+  async function handleSignIn() {
+    setSigningIn(true)
+    const supabase = createClient()
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+        skipBrowserRedirect: true, // don't navigate this page away — open a popup instead
+      },
+    })
+
+    if (error || !data?.url) {
+      console.error("Sign in error:", error)
+      setSigningIn(false)
+      return
+    }
+
+    const popup = window.open(data.url, "google-oauth", "width=480,height=640")
+
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && session) {
+        listener.subscription.unsubscribe()
+        popup?.close()
+        setSigningIn(false)
+      }
+    })
+  }
+
   return (
     <div className="flex h-screen flex-col bg-background">
       <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur shrink-0">
@@ -134,6 +164,19 @@ export default function Page() {
             >
               About
             </Link>
+            {!user && (
+              <button
+                type="button"
+                onClick={handleSignIn}
+                disabled={signingIn}
+                className="rounded-lg border border-border bg-card px-3.5 py-1.5 text-sm font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+              >
+                {signingIn ? "Signing in…" : "Sign in"}
+              </button>
+            )}
+            {user && step === "upload" && (
+              <span className="text-sm font-medium text-foreground">Hi, {getFirstName(user)}</span>
+            )}
             <button
               type="button"
               onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
