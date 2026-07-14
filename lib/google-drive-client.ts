@@ -31,7 +31,11 @@ export async function connectGoogleDrive(): Promise<boolean> {
     provider: "google",
     options: {
       scopes: DRIVE_SCOPES,
-      redirectTo: `${window.location.origin}/auth/popup-complete`,
+      // Goes through /auth/callback first (exchanges Google's auth code for
+      // a real session — this step was missing before, which is why the
+      // popup would close successfully but provider_token stayed empty).
+      // /auth/callback itself then redirects to /auth/popup-complete.
+      redirectTo: `${window.location.origin}/auth/callback`,
       skipBrowserRedirect: true,
       queryParams: {
         access_type: "offline", // required to get a refresh_token back
