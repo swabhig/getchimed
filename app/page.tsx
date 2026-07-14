@@ -180,7 +180,7 @@ export default function Page() {
               user={user}
             />
           )}
-          {step === "export" && <ExportScreen data={analysis} onBack={() => setStep("results")} />}
+          {step === "export" && <ExportScreen data={analysis} onBack={() => setStep("results")} user={user} />}
         </main>
       </div>
     </div>

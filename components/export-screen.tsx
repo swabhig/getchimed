@@ -1,13 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import { Download, Sheet, ArrowLeft, Check, Copy, MessageSquare } from "lucide-react"
+import { Download, Sheet, ArrowLeft, Check, Copy, MessageSquare, Loader2, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { connectGoogleDrive } from "@/lib/google-drive-client"
 import type { AnalysisResult } from "@/lib/nps-data"
 
 interface ExportScreenProps {
   data: AnalysisResult
   onBack: () => void
+  user?: any
 }
 
 function toCsv(data: AnalysisResult): string {
@@ -51,9 +53,12 @@ ${passiveThemes.map((t) => `- ${t.label}`).join("\n")}
   return summary
 }
 
-export function ExportScreen({ data, onBack }: ExportScreenProps) {
+export function ExportScreen({ data, onBack, user }: ExportScreenProps) {
   const [copiedSummary, setCopiedSummary] = useState(false)
-  
+  const [sheetsExporting, setSheetsExporting] = useState(false)
+  const [sheetsUrl, setSheetsUrl] = useState<string | null>(null)
+  const [sheetsError, setSheetsError] = useState<string | null>(null)
+
   function downloadCsv() {
     const blob = new Blob([toCsv(data)], { type: "text/csv;charset=utf-8;" })
     const url = URL.createObjectURL(blob)
@@ -62,6 +67,47 @@ export function ExportScreen({ data, onBack }: ExportScreenProps) {
     link.download = "nps-action-list.csv"
     link.click()
     URL.revokeObjectURL(url)
+  }
+
+  async function handleExportToSheets() {
+    if (!user) {
+      setSheetsError("Sign in first to export to Google Sheets.")
+      return
+    }
+
+    setSheetsError(null)
+    setSheetsExporting(true)
+
+    try {
+      let statusRes = await fetch("/api/drive/token-status")
+      let status = await statusRes.json()
+
+      if (!status.accessToken) {
+        const connected = await connectGoogleDrive()
+        if (!connected) {
+          setSheetsExporting(false)
+          return
+        }
+      }
+
+      const res = await fetch("/api/drive/export", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ analysis: data }),
+      })
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        throw new Error(body?.error ?? "Export failed")
+      }
+
+      const { url } = await res.json()
+      setSheetsUrl(url)
+    } catch (err) {
+      setSheetsError(err instanceof Error ? err.message : "Export failed. Please try again.")
+    } finally {
+      setSheetsExporting(false)
+    }
   }
   
   async function copySummaryToClipboard() {
@@ -110,12 +156,34 @@ export function ExportScreen({ data, onBack }: ExportScreenProps) {
           </div>
           <h2 className="mt-4 text-sm font-medium text-foreground">Export to Google Sheets</h2>
           <p className="mt-1 flex-1 text-xs leading-relaxed text-muted-foreground">
-            Sync the action list to a new sheet in your Drive. Connect your account to enable this.
+            Sync the full analysis — Summary, themes, flags, and action list — to a new sheet in your Drive.
           </p>
-          <Button variant="outline" className="mt-4 w-full" disabled>
-            <Sheet className="size-4" />
-            Connect to enable
-          </Button>
+          {sheetsUrl ? (
+            <a
+              href={sheetsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-foreground px-4 py-2 text-sm font-semibold text-background hover:opacity-90"
+            >
+              <ExternalLink className="size-4" />
+              Open in Google Sheets
+            </a>
+          ) : (
+            <Button variant="outline" className="mt-4 w-full" onClick={handleExportToSheets} disabled={sheetsExporting}>
+              {sheetsExporting ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Exporting…
+                </>
+              ) : (
+                <>
+                  <Sheet className="size-4" />
+                  Export to Google Sheets
+                </>
+              )}
+            </Button>
+          )}
+          {sheetsError && <p className="mt-2 text-xs text-detractor">{sheetsError}</p>}
         </div>
 
         <div className="flex flex-col rounded-2xl border border-border bg-card p-5">

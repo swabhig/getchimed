@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/client"
 import { LoadingOverlay } from "@/components/loading-overlay"
+import { connectGoogleDrive } from "@/lib/google-drive-client"
+import { openGoogleSheetPicker } from "@/lib/google-picker"
 import { assembleAnalysis, segmentRows, type AnalysisResult, type ClusterResult, type ResponseRow, type BenchmarkContext, type BusinessType, type Model, type SurveyFrequency } from "@/lib/nps-data"
 
 interface UploadScreenProps {
@@ -71,6 +73,7 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
   const [dragOver, setDragOver] = useState(false)
   const [columns, setColumns] = useState<string[]>([])
   const [rawRows, setRawRows] = useState<Record<string, string>[]>([])
+  const [driveImporting, setDriveImporting] = useState(false)
   const [mapping, setMapping] = useState<Record<MappingKey, string>>({
     score: "",
     main_benefit: "",
@@ -141,6 +144,67 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
 
   function handleFiles(files: FileList | null) {
     if (files && files[0]) parseFile(files[0])
+  }
+
+  async function handleImportFromDrive() {
+    if (!user) {
+      setError("Sign in first to import from Google Drive.")
+      return
+    }
+
+    setError(null)
+    setDriveImporting(true)
+
+    try {
+      // Check if we already have a valid (or refreshable) access token.
+      let statusRes = await fetch("/api/drive/token-status")
+      let status = await statusRes.json()
+
+      // Not connected yet (or the connection expired past what a refresh
+      // token can fix) — run the consent popup, then check again.
+      if (!status.accessToken) {
+        const connected = await connectGoogleDrive()
+        if (!connected) {
+          setDriveImporting(false)
+          return
+        }
+        statusRes = await fetch("/api/drive/token-status")
+        status = await statusRes.json()
+      }
+
+      if (!status.accessToken) {
+        setError("Couldn't connect to Google Drive. Please try again.")
+        setDriveImporting(false)
+        return
+      }
+
+      const fileId = await openGoogleSheetPicker(status.accessToken)
+      if (!fileId) {
+        setDriveImporting(false)
+        return // person closed the picker without choosing a file
+      }
+
+      const res = await fetch("/api/drive/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileId }),
+      })
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        throw new Error(body?.error ?? "Import failed")
+      }
+
+      const { columns: importedColumns, rows: importedRows } = await res.json()
+      setColumns(importedColumns)
+      setRawRows(importedRows)
+      setFileName("Google Sheet")
+      setMapping({ score: "", main_benefit: "", improvement: "", persona: "" })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Import failed. Please try again.")
+    } finally {
+      setDriveImporting(false)
+    }
   }
 
   function setMap(key: MappingKey, v: string) {
@@ -347,7 +411,7 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
           </span>
         </div>
         <h1
-          className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground text-balance animate-chime-rise"
+          className="text-2xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground text-balance animate-chime-rise"
           style={{ animationDelay: "0.08s" }}
         >
           Know what actually matters to your customers.
@@ -455,24 +519,38 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
           )}
         </div>
       ) : (
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="sheet-url" className="text-sm font-medium text-foreground">
-            Google Sheet URL
-          </label>
-          <input
-            id="sheet-url"
-            type="url"
-            value={sheetUrl}
-            onChange={(e) => setSheetUrl(e.target.value)}
-            placeholder="https://docs.google.com/spreadsheets/d/…"
-            className={cn(
-              "h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border p-8 text-center">
+          <div className="flex size-11 items-center justify-center rounded-full bg-muted">
+            <FileSpreadsheet className="size-5 text-muted-foreground" />
+          </div>
+          {fileName === "Google Sheet" ? (
+            <>
+              <p className="text-sm font-medium text-foreground">Sheet imported</p>
+              <p className="text-xs text-muted-foreground">
+                {rawRows.length} rows · {columns.length} columns — pick a different sheet below
+              </p>
+            </>
+          ) : (
+            <p className="text-sm font-medium text-foreground">Import responses from a Google Sheet</p>
+          )}
+          <button
+            type="button"
+            onClick={handleImportFromDrive}
+            disabled={driveImporting}
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50"
+          >
+            {driveImporting ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Connecting…
+              </>
+            ) : (
+              <>
+                <FileSpreadsheet className="size-4" />
+                {fileName === "Google Sheet" ? "Choose a different sheet" : "Connect Google Drive"}
+              </>
             )}
-          />
-          <p className="text-xs text-muted-foreground">
-            Google Sheet import is coming soon — upload a CSV export to analyze responses now.
-          </p>
+          </button>
         </div>
       )}
 
