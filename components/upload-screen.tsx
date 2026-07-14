@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import Papa from "papaparse"
 import { Upload, Link2, FileSpreadsheet, ArrowRight, Check, Loader2, AlertCircle, Info } from "lucide-react"
@@ -89,7 +89,22 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
   const [showGoogleAuth, setShowGoogleAuth] = useState(false)
   const [googleAuthLoading, setGoogleAuthLoading] = useState(false)
   const [pendingAnalysis, setPendingAnalysis] = useState<AnalysisResult | null>(null)
+  const [guestConfirmed, setGuestConfirmed] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // Fires once BOTH sides are ready, whichever finishes last: the analysis
+  // pipeline (insert/analyze/benchmark) and the person's auth choice (signed
+  // in, or explicitly chose to continue as a guest). This is what makes the
+  // two things run in parallel instead of sequentially — the auth-or-guest
+  // decision happens while the backend work is still in progress, not after.
+  useEffect(() => {
+    if (pendingAnalysis && (user || guestConfirmed)) {
+      onAnalyze(pendingAnalysis)
+      setPendingAnalysis(null)
+      setShowGoogleAuth(false)
+      setGuestConfirmed(false)
+    }
+  }, [pendingAnalysis, user, guestConfirmed])
 
   const hasData = columns.length > 0 && rawRows.length > 0
   const canAnalyze =
@@ -183,7 +198,6 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
   async function handleAnalyze() {
     setError(null)
     setErroredField(null)
-    setStatus("inserting")
 
     // Map raw CSV rows to score/main_benefit/improvement/persona using the chosen columns.
     // No id yet — Supabase assigns the uuid we'll use as rowRef.
@@ -200,7 +214,6 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
       .filter((r) => r.score >= 0)
 
     if (mapped.length === 0) {
-      setStatus("idle")
       setError("No rows had a valid numeric score in the selected column.")
       return
     }
@@ -211,10 +224,19 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
     // comment column, leaving "Improvement" mapped to something blank).
     const validationError = validateMappedRows(mapped, rawRows.length)
     if (validationError) {
-      setStatus("idle")
       setError(validationError.message)
       setErroredField(validationError.field)
       return
+    }
+
+    setStatus("inserting")
+
+    // Show the sign-in-or-guest choice RIGHT NOW, in parallel with the
+    // pipeline below — not after it finishes. The person makes their auth
+    // decision while the expensive Supabase insert + LLM calls are already
+    // running in the background.
+    if (!user) {
+      setShowGoogleAuth(true)
     }
 
     // Persist to Supabase and read back the generated uuids.
@@ -233,6 +255,7 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
 
     if (insertError || !inserted) {
       setStatus("idle")
+      setShowGoogleAuth(false)
       setError(`Failed to save responses: ${insertError?.message ?? "unknown error"}`)
       return
     }
@@ -295,22 +318,19 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
       }
       
       analysis.context = context
-
       setStatus("idle")
 
-      // If user is not authenticated, show Google auth modal with the results after sign-in
-      if (!user) {
-        setPendingAnalysis(analysis)
-        setShowGoogleAuth(true)
-        return
+      // Don't gate on auth here — just record the result. The effect above
+      // watches pendingAnalysis + user/guestConfirmed and moves to results
+      // the moment BOTH the pipeline is done AND the person has made a
+      // choice — whichever finishes last.
+      setPendingAnalysis(analysis)
+      if (user || guestConfirmed) {
+        onAnalyze(analysis)
       }
-
-      // Saving to Supabase is handled centrally in app/page.tsx once the
-      // analysis is displayed and a user is present — no save here to avoid
-      // duplicate/mismatched writes.
-      onAnalyze(analysis)
     } catch (err) {
       setStatus("idle")
+      setShowGoogleAuth(false)
       setError(err instanceof Error ? err.message : "Analysis failed. Please try again.")
     }
   }
@@ -684,17 +704,16 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
                 const popup = window.open(data.url, 'google-oauth', 'width=480,height=640')
 
                 // The main window never navigates away, so pendingAnalysis stays
-                // intact. Listen for the popup completing sign-in, then proceed.
+                // intact (if it even exists yet — the pipeline may still be
+                // running in the background). Once signed in, close this modal
+                // right away; the effect above takes it from here and moves to
+                // results the moment the pipeline also finishes.
                 const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
                   if (event === 'SIGNED_IN' && session) {
                     listener.subscription.unsubscribe()
                     popup?.close()
                     setGoogleAuthLoading(false)
                     setShowGoogleAuth(false)
-                    if (pendingAnalysis) {
-                      onAnalyze(pendingAnalysis)
-                      setPendingAnalysis(null)
-                    }
                   }
                 })
               }}
@@ -735,18 +754,17 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
               onClick={() => {
                 setShowGoogleAuth(false)
                 setGoogleAuthLoading(false)
-                if (pendingAnalysis) {
-                  onAnalyze(pendingAnalysis)
-                  setPendingAnalysis(null)
-                }
+                setGuestConfirmed(true)
               }}
               className="w-full rounded-lg border border-border px-6 py-3 font-medium text-foreground hover:bg-muted transition-colors"
             >
-              Continue without saving
+              Continue as guest
             </button>
 
             <p className="text-xs text-center text-muted-foreground">
-              Your analysis is ready to view. Sign in to save it permanently.
+              {pendingAnalysis
+                ? "Your analysis is ready to view. Sign in to save it permanently."
+                : "We're analyzing your responses in the background — pick one and we'll take you straight there."}
             </p>
           </div>
         </div>

@@ -39,14 +39,15 @@ const teamForCategory: Record<FlagCategory, string> = {
 
 const flagFilterOrder: (FlagCategory | "all")[] = ["all", "bug", "friction", "support"]
 
-const RESPONSES_PER_PAGE = 25
+const RESPONSES_PER_PAGE = 15
+const MAX_NAVIGABLE_PAGES = 5
 
-function responsesToCsv(data: AnalysisResult): string {
-  const rows: string[][] = [["score", "main_benefit", "improvement", "persona"]]
-  for (const r of data.responses) {
-    rows.push([String(r.score), r.main_benefit ?? "", r.improvement ?? "", r.persona ?? ""])
+function rowsToCsv(rows: AnalysisResult["responses"]): string {
+  const out: string[][] = [["score", "main_benefit", "improvement", "persona"]]
+  for (const r of rows) {
+    out.push([String(r.score), r.main_benefit ?? "", r.improvement ?? "", r.persona ?? ""])
   }
-  return rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n")
+  return out.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n")
 }
 
 function getNpsRemark(score: number): string {
@@ -117,6 +118,7 @@ export function ResultsScreen({ data, onExport, onReset, user }: ResultsScreenPr
   const [openSections, setOpenSections] = useState({ wordClouds: true, responses: true, fixes: true, flags: false })
   const [flagFilter, setFlagFilter] = useState<FlagCategory | "all">("all")
   const [selectedFlag, setSelectedFlag] = useState<FlagType | null>(null)
+  const [downloadMenuOpen, setDownloadMenuOpen] = useState(false)
 
   const promoterThemes = data.themes.filter((t) => t.segment === "promoter")
   const passiveThemes = data.themes.filter((t) => t.segment === "passive")
@@ -128,18 +130,19 @@ export function ResultsScreen({ data, onExport, onReset, user }: ResultsScreenPr
   }, [activeTheme, data])
 
   const totalPages = Math.max(1, Math.ceil(visibleRows.length / RESPONSES_PER_PAGE))
-  const currentPage = Math.min(page, totalPages - 1)
+  const maxPage = Math.min(totalPages, MAX_NAVIGABLE_PAGES)
+  const currentPage = Math.min(page, maxPage - 1)
   const pagedRows = visibleRows.slice(
     currentPage * RESPONSES_PER_PAGE,
     currentPage * RESPONSES_PER_PAGE + RESPONSES_PER_PAGE,
   )
 
-  function downloadFullCsv() {
-    const blob = new Blob([responsesToCsv(data)], { type: "text/csv;charset=utf-8;" })
+  function downloadCsv(rows: AnalysisResult["responses"], filename: string) {
+    const blob = new Blob([rowsToCsv(rows)], { type: "text/csv;charset=utf-8;" })
     const url = URL.createObjectURL(blob)
     const link = document.createElement("a")
     link.href = url
-    link.download = "nps-responses.csv"
+    link.download = filename
     link.click()
     URL.revokeObjectURL(url)
   }
@@ -310,7 +313,7 @@ export function ResultsScreen({ data, onExport, onReset, user }: ResultsScreenPr
           )}
           <button
             type="button"
-            onClick={downloadFullCsv}
+            onClick={() => downloadCsv(data.responses, "nps-responses.csv")}
             className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
           >
             <Download className="size-3.5" />
@@ -357,28 +360,76 @@ export function ResultsScreen({ data, onExport, onReset, user }: ResultsScreenPr
         </div>
 
         {visibleRows.length > RESPONSES_PER_PAGE && (
-          <div className="mt-3 flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">
-              Page {currentPage + 1} of {totalPages}
-            </span>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setPage((p) => Math.max(0, p - 1))}
-                disabled={currentPage === 0}
-                className="rounded-md border border-border px-3 py-1.5 font-medium text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Previous
-              </button>
-              <button
-                type="button"
-                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                disabled={currentPage >= totalPages - 1}
-                className="rounded-md border border-border px-3 py-1.5 font-medium text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Next
-              </button>
+          <div className="mt-3 flex flex-col gap-3">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">
+                Page {currentPage + 1} of {totalPages}
+              </span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  disabled={currentPage === 0}
+                  className="rounded-md border border-border px-3 py-1.5 font-medium text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Previous
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.min(maxPage - 1, p + 1))}
+                  disabled={currentPage >= maxPage - 1}
+                  className="rounded-md border border-border px-3 py-1.5 font-medium text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
             </div>
+
+            {/* Navigation is capped at MAX_NAVIGABLE_PAGES — on the actual
+                last reachable page (whether that's page 3 of 3, or page 5
+                of 20), offer a direct download instead of more clicking. */}
+            {currentPage === maxPage - 1 && (
+              <div className="relative self-end">
+                <button
+                  type="button"
+                  onClick={() => setDownloadMenuOpen((v) => !v)}
+                  className="inline-flex items-center gap-1.5 rounded-md bg-muted px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted/70"
+                >
+                  <Download className="size-3.5" />
+                  {totalPages > MAX_NAVIGABLE_PAGES
+                    ? `${totalPages - MAX_NAVIGABLE_PAGES} more pages — download instead?`
+                    : "Download these responses"}
+                  <ChevronDown className={cn("size-3.5 transition-transform", downloadMenuOpen && "rotate-180")} />
+                </button>
+                {downloadMenuOpen && (
+                  <div className="absolute right-0 top-full z-10 mt-1 w-64 rounded-md border border-border bg-popover py-1 shadow-lg">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        downloadCsv(data.responses, "nps-responses-all.csv")
+                        setDownloadMenuOpen(false)
+                      }}
+                      className="block w-full px-3 py-2 text-left text-xs text-popover-foreground hover:bg-muted"
+                    >
+                      Download all {data.responses.length} responses
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        downloadCsv(visibleRows, "nps-responses-filtered.csv")
+                        setDownloadMenuOpen(false)
+                      }}
+                      disabled={!activeTheme}
+                      className="block w-full px-3 py-2 text-left text-xs text-popover-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      {activeTheme
+                        ? `Download filtered (${visibleRows.length}) responses`
+                        : "Download with current filter (no filter active)"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </CollapsibleSection>
