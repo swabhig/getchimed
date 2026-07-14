@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Download, Sheet, ArrowLeft, Check, Copy, MessageSquare, Loader2, ExternalLink } from "lucide-react"
+import { Download, Sheet, ArrowLeft, Check, Copy, MessageSquare, Loader2, ExternalLink, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { connectGoogleDrive } from "@/lib/google-drive-client"
 import type { AnalysisResult } from "@/lib/nps-data"
@@ -56,6 +56,7 @@ ${passiveThemes.map((t) => `- ${t.label}`).join("\n")}
 export function ExportScreen({ data, onBack, user }: ExportScreenProps) {
   const [copiedSummary, setCopiedSummary] = useState(false)
   const [sheetsExporting, setSheetsExporting] = useState(false)
+  const [pdfExporting, setPdfExporting] = useState(false)
   const [sheetsUrl, setSheetsUrl] = useState<string | null>(null)
   const [sheetsError, setSheetsError] = useState<string | null>(null)
 
@@ -109,6 +110,33 @@ export function ExportScreen({ data, onBack, user }: ExportScreenProps) {
       setSheetsExporting(false)
     }
   }
+
+  async function handlePdfExport() {
+    setPdfExporting(true)
+    try {
+      const res = await fetch("/api/export/pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ analysis: data }),
+      })
+
+      if (!res.ok) {
+        throw new Error("Failed to generate PDF")
+      }
+
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = "chime-export.pdf"
+      link.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error("PDF export failed:", err)
+    } finally {
+      setPdfExporting(false)
+    }
+  }
   
   async function copySummaryToClipboard() {
     const summary = generateHuddleSummary(data)
@@ -131,22 +159,31 @@ export function ExportScreen({ data, onBack, user }: ExportScreenProps) {
       <header className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground text-balance">Export your insights</h1>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground text-pretty">
-          Download the action list as a CSV, or push it straight into a Google Sheet for your team.
+          Download a polished PDF to share, push the full data into a Google Sheet, or grab a quick summary for Slack.
         </p>
       </header>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div className="flex flex-col rounded-2xl border border-border bg-card p-5">
-          <div className="flex size-11 items-center justify-center rounded-full bg-muted">
-            <Download className="size-5 text-foreground" />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="flex flex-col rounded-2xl border-2 border-brand-accent/40 bg-card p-5">
+          <div className="flex size-11 items-center justify-center rounded-full bg-brand-accent/15">
+            <FileText className="size-5 text-brand-accent" />
           </div>
-          <h2 className="mt-4 text-sm font-medium text-foreground">Download CSV</h2>
+          <h2 className="mt-4 text-sm font-medium text-foreground">Download PDF</h2>
           <p className="mt-1 flex-1 text-xs leading-relaxed text-muted-foreground">
-            A spreadsheet-ready file with every prioritized theme, category, team, and mention count.
+            A one-page, share-ready summary — NPS score, top themes, and fixes by team. The one to screenshot or forward.
           </p>
-          <Button className="mt-4 w-full" onClick={downloadCsv}>
-            <Download className="size-4" />
-            Download CSV
+          <Button className="mt-4 w-full" onClick={handlePdfExport} disabled={pdfExporting}>
+            {pdfExporting ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Generating…
+              </>
+            ) : (
+              <>
+                <FileText className="size-4" />
+                Download PDF
+              </>
+            )}
           </Button>
         </div>
 
@@ -156,7 +193,7 @@ export function ExportScreen({ data, onBack, user }: ExportScreenProps) {
           </div>
           <h2 className="mt-4 text-sm font-medium text-foreground">Export to Google Sheets</h2>
           <p className="mt-1 flex-1 text-xs leading-relaxed text-muted-foreground">
-            Sync the full analysis — Summary, themes, flags, and action list — to a new sheet in your Drive.
+            The full data — takeaway, themes, flags, and action list — in one sheet in your Drive, for anyone who wants to dig in.
           </p>
           {sheetsUrl ? (
             <a
@@ -184,6 +221,20 @@ export function ExportScreen({ data, onBack, user }: ExportScreenProps) {
             </Button>
           )}
           {sheetsError && <p className="mt-2 text-xs text-detractor">{sheetsError}</p>}
+        </div>
+
+        <div className="flex flex-col rounded-2xl border border-border bg-card p-5">
+          <div className="flex size-11 items-center justify-center rounded-full bg-muted">
+            <Download className="size-5 text-foreground" />
+          </div>
+          <h2 className="mt-4 text-sm font-medium text-foreground">Download CSV</h2>
+          <p className="mt-1 flex-1 text-xs leading-relaxed text-muted-foreground">
+            A spreadsheet-ready file with every prioritized theme, category, team, and mention count.
+          </p>
+          <Button variant="outline" className="mt-4 w-full" onClick={downloadCsv}>
+            <Download className="size-4" />
+            Download CSV
+          </Button>
         </div>
 
         <div className="flex flex-col rounded-2xl border border-border bg-card p-5">

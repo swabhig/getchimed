@@ -1,17 +1,25 @@
 // lib/google-drive-client.ts
 //
-// Requests the incremental Drive/Sheets scopes via a popup — separate from
-// the main sign-in flow, only triggered when someone actually clicks
-// Import from Sheet or Export to Sheets. Reuses the same popup pattern as
-// the main sign-in (skipBrowserRedirect + window.open), and lands on the
-// existing /auth/popup-complete page, which self-closes.
+// Requests incremental Drive access via a popup — separate from the main
+// sign-in flow, only triggered when someone actually clicks Import from
+// Sheet or Export to Sheets. Reuses the same popup pattern as the main
+// sign-in (skipBrowserRedirect + window.open), and lands on the existing
+// /auth/popup-complete page, which self-closes.
+//
+// Uses ONLY drive.file — deliberately not the Sheets API's `spreadsheets`
+// scope. `spreadsheets` is classified Sensitive by Google, which caps
+// unverified apps at ~100 total users and shows a scary "unverified app"
+// warning until a real verification review is completed. `drive.file` is
+// non-sensitive, has no user cap, and is Google's own recommended pattern
+// for exactly this Picker-based import/export use case — see the routes
+// in app/api/drive/ for how import/export work within this single scope.
 
 import { createClient } from "@/lib/supabase/client"
 
-const DRIVE_SCOPES = "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets"
+const DRIVE_SCOPES = "https://www.googleapis.com/auth/drive.file"
 
 /**
- * Opens the Google consent popup requesting Drive/Sheets access, waits for
+ * Opens the Google consent popup requesting Drive access, waits for
  * it to close, then reads the resulting session's provider tokens and saves
  * them server-side. Resolves true if a token was obtained, false if the
  * popup was closed without completing.
