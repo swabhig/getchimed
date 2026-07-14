@@ -347,7 +347,7 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
           </span>
         </div>
         <h1
-          className="text-2xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground text-balance animate-chime-rise"
+          className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground text-balance animate-chime-rise"
           style={{ animationDelay: "0.08s" }}
         >
           Know what actually matters to your customers.
