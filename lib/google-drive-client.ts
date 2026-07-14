@@ -19,10 +19,13 @@ import { createClient } from "@/lib/supabase/client"
 const DRIVE_SCOPES = "https://www.googleapis.com/auth/drive.file"
 
 /**
- * Opens the Google consent popup requesting Drive access, waits for
- * it to close, then reads the resulting session's provider tokens and saves
- * them server-side. Resolves true if a token was obtained, false if the
- * popup was closed without completing.
+ * Opens the Google consent popup requesting Drive access and waits for it
+ * to close. Token saving happens server-side inside /auth/callback (at the
+ * moment the code is exchanged) — not here — since this window has no
+ * reliable way to observe a session created in a different browsing
+ * context. After this resolves, the caller should re-check
+ * /api/drive/token-status (a fresh server read) to confirm the connection
+ * actually succeeded.
  */
 export async function connectGoogleDrive(): Promise<boolean> {
   const supabase = createClient()
@@ -31,10 +34,6 @@ export async function connectGoogleDrive(): Promise<boolean> {
     provider: "google",
     options: {
       scopes: DRIVE_SCOPES,
-      // Goes through /auth/callback first (exchanges Google's auth code for
-      // a real session — this step was missing before, which is why the
-      // popup would close successfully but provider_token stayed empty).
-      // /auth/callback itself then redirects to /auth/popup-complete.
       redirectTo: `${window.location.origin}/auth/callback`,
       skipBrowserRedirect: true,
       queryParams: {
@@ -52,7 +51,8 @@ export async function connectGoogleDrive(): Promise<boolean> {
   const popup = window.open(data.url, "google-drive-consent", "width=480,height=640")
   if (!popup) return false
 
-  // Wait for the popup to close (it self-closes via /auth/popup-complete).
+  // Wait for the popup to close (it self-closes via /auth/popup-complete,
+  // after /auth/callback has already saved the tokens server-side).
   await new Promise<void>((resolve) => {
     const interval = setInterval(() => {
       if (popup.closed) {
@@ -62,24 +62,5 @@ export async function connectGoogleDrive(): Promise<boolean> {
     }, 400)
   })
 
-  // Read the fresh session — provider_token/provider_refresh_token are
-  // populated after the incremental consent completes.
-  const { data: sessionData } = await supabase.auth.getSession()
-  const session = sessionData.session as any
-
-  if (!session?.provider_token) {
-    return false
-  }
-
-  const res = await fetch("/api/drive/save-tokens", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      accessToken: session.provider_token,
-      refreshToken: session.provider_refresh_token ?? null,
-      expiresIn: 3600,
-    }),
-  })
-
-  return res.ok
+  return true
 }

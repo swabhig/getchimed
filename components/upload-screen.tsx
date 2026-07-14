@@ -532,7 +532,12 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
               </p>
             </>
           ) : (
-            <p className="text-sm font-medium text-foreground">Import responses from a Google Sheet</p>
+            <>
+              <p className="text-sm font-medium text-foreground">Import responses from a Google Sheet</p>
+              <p className="max-w-xs text-xs text-muted-foreground">
+                Pick any sheet from your own Drive — no need to change its sharing settings first.
+              </p>
+            </>
           )}
           <button
             type="button"

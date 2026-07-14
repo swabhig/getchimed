@@ -108,7 +108,10 @@ export async function POST(req: NextRequest) {
     const body = await res.text()
     console.error("[drive/import] Drive export error:", body)
     return NextResponse.json(
-      { error: "Couldn't read that sheet. Check it's shared with your account and try again." },
+      {
+        error:
+          "Couldn't read that file. This can happen if it's not a Google Sheet, or if the Drive connection needs to be refreshed — try disconnecting and reconnecting Google Drive, then pick the file again. You don't need to change its sharing settings.",
+      },
       { status: 502 },
     )
   }
