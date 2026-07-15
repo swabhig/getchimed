@@ -2,6 +2,7 @@ import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono, Caveat } from 'next/font/google'
 import { ThemeProvider } from '@/components/theme-provider'
+import { RatePageWidget } from '@/components/rate-page-widget'
 import './globals.css'
 
 const geistSans = Geist({ subsets: ['latin'], variable: '--font-geist-sans' })
@@ -74,6 +75,7 @@ export default function RootLayout({
               </div>
             </div>
           </footer>
+          <RatePageWidget />
         </ThemeProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>

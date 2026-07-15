@@ -5,6 +5,7 @@ import { ArrowRight, X, Bug, Zap, LifeBuoy, TrendingUp, Wrench, Info, Download, 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { WordCloud } from "@/components/word-cloud"
+import { ChimedInBadge } from "@/components/chimed-in-badge"
 import { getFirstName } from "@/lib/user"
 import type { AnalysisResult, FlagCategory, Theme, Flag as FlagType } from "@/lib/nps-data"
 
@@ -182,6 +183,7 @@ export function ResultsScreen({ data, onExport, onReset, user }: ResultsScreenPr
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 sm:px-8">
+      <ChimedInBadge />
       {/* Utility row */}
       <div className="mb-8 flex items-center justify-between">
         <button
