@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useTheme } from "next-themes"
 import { Sun, Moon } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { signInWithGooglePopup } from "@/lib/google-signin"
 import { cn } from "@/lib/utils"
 import { UploadScreen } from "@/components/upload-screen"
 import { ResultsScreen } from "@/components/results-screen"
@@ -89,30 +90,9 @@ export default function Page() {
 
   async function handleSignIn() {
     setSigningIn(true)
-    const supabase = createClient()
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-        skipBrowserRedirect: true, // don't navigate this page away — open a popup instead
-      },
-    })
-
-    if (error || !data?.url) {
-      console.error("Sign in error:", error)
-      setSigningIn(false)
-      return
-    }
-
-    const popup = window.open(data.url, "google-oauth", "width=480,height=640")
-
-    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" && session) {
-        listener.subscription.unsubscribe()
-        popup?.close()
-        setSigningIn(false)
-      }
-    })
+    const user = await signInWithGooglePopup()
+    if (user) setUser(user)
+    setSigningIn(false)
   }
 
   return (
@@ -200,6 +180,7 @@ export default function Page() {
                 setStep("results")
               }}
               onSignOut={handleSignOut}
+              onSignedIn={(u) => setUser(u)}
             />
             </div>
         )}
@@ -213,6 +194,7 @@ export default function Page() {
                 setAnalysis(data)
                 setStep("results")
               }}
+              onSignedIn={(u) => setUser(u)}
             />
           )}
           {step === "results" && (

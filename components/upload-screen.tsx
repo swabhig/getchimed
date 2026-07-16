@@ -7,6 +7,7 @@ import { Upload, Link2, FileSpreadsheet, ArrowRight, Check, Loader2, AlertCircle
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/client"
+import { signInWithGooglePopup } from "@/lib/google-signin"
 import { LoadingOverlay } from "@/components/loading-overlay"
 import { getFirstName } from "@/lib/user"
 import { connectGoogleDrive } from "@/lib/google-drive-client"
@@ -16,6 +17,7 @@ import { assembleAnalysis, segmentRows, type AnalysisResult, type ClusterResult,
 interface UploadScreenProps {
   user: any
   onAnalyze: (data: AnalysisResult) => void
+  onSignedIn?: (user: any) => void
 }
 
 type MappingKey = "score" | "main_benefit" | "improvement" | "persona"
@@ -67,7 +69,7 @@ function ColumnSelect({
   )
 }
 
-export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
+export function UploadScreen({ user, onAnalyze, onSignedIn }: UploadScreenProps) {
   const [source, setSource] = useState<"file" | "sheet">("file")
   const [fileName, setFileName] = useState<string | null>(null)
   const [sheetUrl, setSheetUrl] = useState("")
@@ -769,37 +771,22 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
             <button
               onClick={async () => {
                 setGoogleAuthLoading(true)
-                const supabase = createClient()
-                const { data, error } = await supabase.auth.signInWithOAuth({
-                  provider: 'google',
-                  options: {
-                    redirectTo: `${window.location.origin}/auth/callback`,
-                    skipBrowserRedirect: true, // don't navigate this window away — open a popup instead
-                  },
-                })
-
-                if (error || !data?.url) {
-                  console.error('Sign in error:', error)
-                  setGoogleAuthLoading(false)
-                  setError('Failed to sign in. Please try again.')
-                  return
-                }
-
-                const popup = window.open(data.url, 'google-oauth', 'width=480,height=640')
 
                 // The main window never navigates away, so pendingAnalysis stays
                 // intact (if it even exists yet — the pipeline may still be
-                // running in the background). Once signed in, close this modal
-                // right away; the effect above takes it from here and moves to
-                // results the moment the pipeline also finishes.
-                const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-                  if (event === 'SIGNED_IN' && session) {
-                    listener.subscription.unsubscribe()
-                    popup?.close()
-                    setGoogleAuthLoading(false)
-                    setShowGoogleAuth(false)
-                  }
-                })
+                // running in the background). The helper re-reads the cookie
+                // session once the popup finishes and hands back the user; we
+                // push it up to page.tsx so the effect above moves to results
+                // the moment the pipeline also finishes.
+                const signedInUser = await signInWithGooglePopup()
+                setGoogleAuthLoading(false)
+
+                if (signedInUser) {
+                  onSignedIn?.(signedInUser)
+                  setShowGoogleAuth(false)
+                } else {
+                  setError('Failed to sign in. Please try again.')
+                }
               }}
               disabled={googleAuthLoading}
               className="w-full rounded-lg bg-black text-white px-6 py-3 font-semibold transition-all duration-200 hover:bg-black/90 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-white dark:text-black dark:hover:bg-white/90"

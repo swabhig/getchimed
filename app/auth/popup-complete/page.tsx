@@ -4,10 +4,15 @@ import { useEffect } from 'react'
 
 export default function PopupComplete() {
   useEffect(() => {
-    // The opener window's onAuthStateChange listener picks up the new
-    // session (Supabase syncs auth state across same-origin tabs/windows
-    // automatically). Give it a brief moment, then close this popup.
-    const timer = setTimeout(() => window.close(), 500)
+    // Cookie-based SSR sessions don't emit a cross-window `storage` event, so
+    // the opener can't detect the new session on its own. Explicitly notify it
+    // so it can re-read the session, then close this popup.
+    try {
+      window.opener?.postMessage({ type: 'supabase:auth:complete' }, window.location.origin)
+    } catch {
+      /* opener may be gone */
+    }
+    const timer = setTimeout(() => window.close(), 300)
     return () => clearTimeout(timer)
   }, [])
 

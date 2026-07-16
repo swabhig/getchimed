@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useTheme } from 'next-themes'
 import { createClient } from '@/lib/supabase/client'
+import { signInWithGooglePopup } from '@/lib/google-signin'
 import { MessageCircle, LogIn } from 'lucide-react'
 import { AnalysisResult } from '@/lib/nps-data'
 import { getFirstName, getAvatarUrl } from '@/lib/user'
@@ -18,10 +19,11 @@ interface SidebarProps {
   user: any
   onSelectAnalysis: (analysis: AnalysisResult) => void
   onSignOut: () => void
+  onSignedIn?: (user: any) => void
   currentAnalysisId?: string
 }
 
-export function Sidebar({ user, onSelectAnalysis, onSignOut, currentAnalysisId }: SidebarProps) {
+export function Sidebar({ user, onSelectAnalysis, onSignOut, onSignedIn, currentAnalysisId }: SidebarProps) {
   const [analyses, setAnalyses] = useState<PastAnalysis[]>([])
   const [loading, setLoading] = useState(true)
   const [signingIn, setSigningIn] = useState(false)
@@ -40,34 +42,14 @@ export function Sidebar({ user, onSelectAnalysis, onSignOut, currentAnalysisId }
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [menuOpen])
 
-  // Same Google popup sign-in flow used elsewhere (upload screen). The
-  // opener window's onAuthStateChange listener (in page.tsx) picks up the
-  // session and re-renders the sidebar into its signed-in state.
+  // Same Google popup sign-in flow used elsewhere. The helper re-reads the
+  // cookie-based session once the popup completes and hands back the user,
+  // which we push up to page.tsx so the whole app re-renders signed-in.
   async function handleSignIn() {
     setSigningIn(true)
-    const supabase = createClient()
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-        skipBrowserRedirect: true,
-      },
-    })
-
-    if (error || !data?.url) {
-      console.error('[chime] Sidebar sign-in error:', error)
-      setSigningIn(false)
-      return
-    }
-
-    const popup = window.open(data.url, 'google-oauth', 'width=480,height=640')
-    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        listener.subscription.unsubscribe()
-        popup?.close()
-        setSigningIn(false)
-      }
-    })
+    const signedInUser = await signInWithGooglePopup()
+    if (signedInUser) onSignedIn?.(signedInUser)
+    setSigningIn(false)
   }
 
   useEffect(() => {
