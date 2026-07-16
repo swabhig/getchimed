@@ -79,16 +79,22 @@ export function ExportScreen({ data, onBack, user }: ExportScreenProps) {
     setSheetsError(null)
     setSheetsExporting(true)
 
+    // Open synchronously, right now, before any await — see the equivalent
+    // comment in upload-screen.tsx's handleImportFromDrive for why.
+    const popup = window.open("", "google-drive-consent", "width=480,height=640")
+
     try {
       let statusRes = await fetch("/api/drive/token-status")
       let status = await statusRes.json()
 
       if (!status.accessToken) {
-        const connected = await connectGoogleDrive()
+        const connected = await connectGoogleDrive(popup)
         if (!connected) {
           setSheetsExporting(false)
           return
         }
+      } else {
+        popup?.close()
       }
 
       const res = await fetch("/api/drive/export", {

@@ -5,7 +5,6 @@ import Link from "next/link"
 import { useTheme } from "next-themes"
 import { Sun, Moon } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
-import { signInWithGooglePopup } from "@/lib/google-signin"
 import { cn } from "@/lib/utils"
 import { UploadScreen } from "@/components/upload-screen"
 import { ResultsScreen } from "@/components/results-screen"
@@ -90,9 +89,46 @@ export default function Page() {
 
   async function handleSignIn() {
     setSigningIn(true)
-    const user = await signInWithGooglePopup()
-    if (user) setUser(user)
-    setSigningIn(false)
+
+    // Open the popup SYNCHRONOUSLY, right here, before any await. Mobile
+    // browsers (iOS Safari especially) only allow window.open() to succeed
+    // as a direct result of the tap — once we await anything first, the
+    // browser no longer treats it as part of the original gesture and
+    // silently blocks it. Opening blank now and redirecting once we have
+    // the real URL keeps the popup tied to the tap the whole time.
+    const popup = window.open("", "google-oauth", "width=480,height=640")
+
+    const supabase = createClient()
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+        skipBrowserRedirect: true, // don't navigate this page away — open a popup instead
+      },
+    })
+
+    if (error || !data?.url) {
+      console.error("Sign in error:", error)
+      popup?.close()
+      setSigningIn(false)
+      return
+    }
+
+    if (popup) {
+      popup.location.href = data.url
+    } else {
+      // Popup blocked anyway (e.g. browser setting) — nothing more we can do here.
+      setSigningIn(false)
+      return
+    }
+
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && session) {
+        listener.subscription.unsubscribe()
+        popup?.close()
+        setSigningIn(false)
+      }
+    })
   }
 
   return (
@@ -180,7 +216,6 @@ export default function Page() {
                 setStep("results")
               }}
               onSignOut={handleSignOut}
-              onSignedIn={(u) => setUser(u)}
             />
             </div>
         )}
@@ -194,7 +229,6 @@ export default function Page() {
                 setAnalysis(data)
                 setStep("results")
               }}
-              onSignedIn={(u) => setUser(u)}
             />
           )}
           {step === "results" && (

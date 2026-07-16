@@ -3,11 +3,10 @@
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import Papa from "papaparse"
-import { Upload, Link2, FileSpreadsheet, ArrowRight, Check, Loader2, AlertCircle, Info } from "lucide-react"
+import { Upload, Link2, FileSpreadsheet, ArrowRight, Check, Loader2, AlertCircle, Info, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/client"
-import { signInWithGooglePopup } from "@/lib/google-signin"
 import { LoadingOverlay } from "@/components/loading-overlay"
 import { getFirstName } from "@/lib/user"
 import { connectGoogleDrive } from "@/lib/google-drive-client"
@@ -17,7 +16,6 @@ import { assembleAnalysis, segmentRows, type AnalysisResult, type ClusterResult,
 interface UploadScreenProps {
   user: any
   onAnalyze: (data: AnalysisResult) => void
-  onSignedIn?: (user: any) => void
 }
 
 type MappingKey = "score" | "main_benefit" | "improvement" | "persona"
@@ -69,7 +67,7 @@ function ColumnSelect({
   )
 }
 
-export function UploadScreen({ user, onAnalyze, onSignedIn }: UploadScreenProps) {
+export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
   const [source, setSource] = useState<"file" | "sheet">("file")
   const [fileName, setFileName] = useState<string | null>(null)
   const [sheetUrl, setSheetUrl] = useState("")
@@ -158,6 +156,12 @@ export function UploadScreen({ user, onAnalyze, onSignedIn }: UploadScreenProps)
     setError(null)
     setDriveImporting(true)
 
+    // Open synchronously, right now, before any await — mobile browsers
+    // (iOS Safari especially) block window.open() unless it happens as a
+    // direct, synchronous result of the tap. Even the token-status check
+    // below is enough of a delay to break that on mobile.
+    const popup = window.open("", "google-drive-consent", "width=480,height=640")
+
     try {
       // Check if we already have a valid (or refreshable) access token.
       let statusRes = await fetch("/api/drive/token-status")
@@ -166,13 +170,16 @@ export function UploadScreen({ user, onAnalyze, onSignedIn }: UploadScreenProps)
       // Not connected yet (or the connection expired past what a refresh
       // token can fix) — run the consent popup, then check again.
       if (!status.accessToken) {
-        const connected = await connectGoogleDrive()
+        const connected = await connectGoogleDrive(popup)
         if (!connected) {
           setDriveImporting(false)
           return
         }
         statusRes = await fetch("/api/drive/token-status")
         status = await statusRes.json()
+      } else {
+        // Already connected — the pre-opened blank popup is unused, close it.
+        popup?.close()
       }
 
       if (!status.accessToken) {
@@ -403,24 +410,24 @@ export function UploadScreen({ user, onAnalyze, onSignedIn }: UploadScreenProps)
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-5 sm:py-6 flex flex-col">
+    <div className="mx-auto max-w-2xl px-4 py-6 sm:py-6 flex flex-col">
       {(status === "inserting" || status === "analyzing" || status === "benchmarking") && (
         <LoadingOverlay status={status} firstName={user ? getFirstName(user) : undefined} />
       )}
-      <header className="mb-5 sm:mb-6">
-        <div className="mb-3 sm:mb-4 flex items-center gap-3 animate-chime-rise">
-          <span className="inline-flex items-center px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border border-border bg-muted text-xs font-medium text-muted-foreground">
+      <header className="mb-6 sm:mb-6">
+        <div className="mb-4 sm:mb-4 flex items-center gap-3 animate-chime-rise">
+          <span className="inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full border border-border bg-muted text-xs font-medium text-muted-foreground">
             MVP · BETA
           </span>
         </div>
         <h1
-          className="text-2xl sm:text-4xl lg:text-[2.75rem] font-extrabold tracking-tight text-foreground text-balance animate-chime-rise"
+          className="text-[1.75rem] leading-[1.15] sm:text-4xl lg:text-[2.75rem] font-extrabold tracking-tight text-foreground text-balance animate-chime-rise"
           style={{ animationDelay: "0.08s" }}
         >
           Know what actually matters to your customers.
         </h1>
         <p
-          className="mt-2 sm:mt-3 text-sm sm:text-base leading-relaxed text-muted-foreground text-pretty max-w-lg animate-chime-rise"
+          className="mt-3 sm:mt-3 text-[15px] sm:text-base leading-relaxed text-muted-foreground text-pretty max-w-lg animate-chime-rise"
           style={{ animationDelay: "0.16s" }}
         >
           Upload your NPS survey responses. Extract 2–3 high-impact themes that reveal what truly drives satisfaction — without the noise.
@@ -429,7 +436,7 @@ export function UploadScreen({ user, onAnalyze, onSignedIn }: UploadScreenProps)
 
       {/* Trust line — same rounded-card language as the rest of the page, not a full-bleed strip */}
       <div
-        className="mb-3 sm:mb-4 flex items-center gap-2.5 rounded-xl bg-muted px-4 py-2.5 animate-chime-rise"
+        className="mb-4 sm:mb-4 flex items-center gap-2.5 rounded-xl bg-muted px-4 py-3 sm:py-2.5 animate-chime-rise"
         style={{ animationDelay: "0.24s" }}
       >
         <Info className="size-4 shrink-0 text-muted-foreground" />
@@ -468,6 +475,18 @@ export function UploadScreen({ user, onAnalyze, onSignedIn }: UploadScreenProps)
         </div>
       </div>
 
+      {/* Sample file — shows people the expected format before they upload */}
+      <div className="mb-3 sm:mb-4 flex justify-center">
+        <a
+          href="/sample-nps-data.csv"
+          download
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+        >
+          <Download className="size-3.5" />
+          Not sure what format? Download a sample CSV
+        </a>
+      </div>
+
       {/* Source input */}
       {source === "file" ? (
         <div
@@ -496,7 +515,7 @@ export function UploadScreen({ user, onAnalyze, onSignedIn }: UploadScreenProps)
           />
           {status === "parsing" ? (
             <>
-              <div className="flex size-11 items-center justify-center rounded-full bg-muted">
+              <div className="flex size-9 sm:size-11 items-center justify-center rounded-full bg-muted">
                 <Loader2 className="size-5 animate-spin text-muted-foreground" />
               </div>
               <p className="text-sm font-medium text-foreground">Parsing {fileName}���</p>
@@ -513,7 +532,7 @@ export function UploadScreen({ user, onAnalyze, onSignedIn }: UploadScreenProps)
             </>
           ) : (
             <>
-              <div className="flex size-11 items-center justify-center rounded-full bg-muted">
+              <div className="flex size-9 sm:size-11 items-center justify-center rounded-full bg-muted">
                 <Upload className="size-5 text-muted-foreground" />
               </div>
               <p className="text-sm font-medium text-foreground">Drag & drop your CSV here</p>
@@ -522,8 +541,8 @@ export function UploadScreen({ user, onAnalyze, onSignedIn }: UploadScreenProps)
           )}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border p-8 text-center">
-          <div className="flex size-11 items-center justify-center rounded-full bg-muted">
+        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border p-5 sm:p-8 text-center">
+          <div className="flex size-9 sm:size-11 items-center justify-center rounded-full bg-muted">
             <FileSpreadsheet className="size-5 text-muted-foreground" />
           </div>
           {fileName === "Google Sheet" ? (
@@ -772,21 +791,47 @@ export function UploadScreen({ user, onAnalyze, onSignedIn }: UploadScreenProps)
               onClick={async () => {
                 setGoogleAuthLoading(true)
 
+                // Open synchronously first — see handleSignIn in app/page.tsx
+                // for why this ordering matters on mobile browsers.
+                const popup = window.open('', 'google-oauth', 'width=480,height=640')
+
+                const supabase = createClient()
+                const { data, error } = await supabase.auth.signInWithOAuth({
+                  provider: 'google',
+                  options: {
+                    redirectTo: `${window.location.origin}/auth/callback`,
+                    skipBrowserRedirect: true, // don't navigate this window away — open a popup instead
+                  },
+                })
+
+                if (error || !data?.url) {
+                  console.error('Sign in error:', error)
+                  popup?.close()
+                  setGoogleAuthLoading(false)
+                  setError('Failed to sign in. Please try again.')
+                  return
+                }
+
+                if (!popup) {
+                  setGoogleAuthLoading(false)
+                  setError('Please allow pop-ups for this site, then try again.')
+                  return
+                }
+                popup.location.href = data.url
+
                 // The main window never navigates away, so pendingAnalysis stays
                 // intact (if it even exists yet — the pipeline may still be
-                // running in the background). The helper re-reads the cookie
-                // session once the popup finishes and hands back the user; we
-                // push it up to page.tsx so the effect above moves to results
-                // the moment the pipeline also finishes.
-                const signedInUser = await signInWithGooglePopup()
-                setGoogleAuthLoading(false)
-
-                if (signedInUser) {
-                  onSignedIn?.(signedInUser)
-                  setShowGoogleAuth(false)
-                } else {
-                  setError('Failed to sign in. Please try again.')
-                }
+                // running in the background). Once signed in, close this modal
+                // right away; the effect above takes it from here and moves to
+                // results the moment the pipeline also finishes.
+                const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+                  if (event === 'SIGNED_IN' && session) {
+                    listener.subscription.unsubscribe()
+                    popup?.close()
+                    setGoogleAuthLoading(false)
+                    setShowGoogleAuth(false)
+                  }
+                })
               }}
               disabled={googleAuthLoading}
               className="w-full rounded-lg bg-black text-white px-6 py-3 font-semibold transition-all duration-200 hover:bg-black/90 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-white dark:text-black dark:hover:bg-white/90"
