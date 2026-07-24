@@ -40,6 +40,8 @@ export default function RootLayout({
     <html lang="en" className={`bg-background ${geistSans.variable} ${geistMono.variable} ${caveat.variable}`} suppressHydrationWarning>
       <body className="flex min-h-svh flex-col font-sans antialiased">
         <ThemeProvider>
+          {/* Visually hidden but present in raw HTML for Google OAuth branding verification */}
+          <h1 className="sr-only">Chime</h1>
           <div className="flex-1">{children}</div>
           <footer className="border-t border-border bg-background shrink-0">
             <div className="mx-auto max-w-5xl px-3 sm:px-4 py-1.5 sm:py-2 text-center text-xs text-muted-foreground">
