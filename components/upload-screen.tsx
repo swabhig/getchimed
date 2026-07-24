@@ -424,7 +424,7 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
           className="text-[1.75rem] leading-[1.15] sm:text-4xl lg:text-[2.75rem] font-extrabold tracking-tight text-foreground text-balance animate-chime-rise"
           style={{ animationDelay: "0.08s" }}
         >
-          Chime. Know what actually matters to your customers.
+          Know what actually matters to your customers.
         </h1>
         <p
           className="mt-3 sm:mt-3 text-[15px] sm:text-base leading-relaxed text-muted-foreground text-pretty max-w-lg animate-chime-rise"
