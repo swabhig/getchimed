@@ -415,8 +415,8 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
         <LoadingOverlay status={status} firstName={user ? getFirstName(user) : undefined} />
       )}
       <header className="mb-6 sm:mb-6">
-        <div className="mb-2 sm:mb-2 animate-chime-rise">
-          <p className="text-sm font-semibold text-foreground">Chime</p>
+        <div className="mb-3 sm:mb-3 animate-chime-rise">
+          <h2 className="text-base sm:text-lg font-bold text-foreground">Chime</h2>
         </div>
         <div className="mb-4 sm:mb-4 flex items-center gap-3 animate-chime-rise">
           <span className="inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full border border-border bg-muted text-xs font-medium text-muted-foreground">
