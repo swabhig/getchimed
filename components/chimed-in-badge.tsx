@@ -40,7 +40,9 @@ function playBell() {
 
 export function ChimedInBadge() {
   const [visible, setVisible] = useState(false)
+  const [dismissing, setDismissing] = useState(false)
   const [revealed, setRevealed] = useState(false)
+  const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -48,16 +50,29 @@ export function ChimedInBadge() {
 
     localStorage.setItem(STORAGE_KEY, "1")
     setVisible(true)
+
+    // Untapped: show 5000ms, then fade, remove at 5500ms.
+    dismissTimer.current = setTimeout(() => {
+      setDismissing(true)
+      setTimeout(() => setVisible(false), 500)
+    }, 5000)
+
+    return () => {
+      if (dismissTimer.current) clearTimeout(dismissTimer.current)
+    }
   }, [])
 
   function handleTap() {
     if (revealed) return
+    if (dismissTimer.current) clearTimeout(dismissTimer.current)
     playBell()
     setRevealed(true)
-  }
 
-  function handleDismiss() {
-    setVisible(false)
+    // Tapped: reveal, fade starting at 2400ms, remove at 2900ms.
+    setTimeout(() => {
+      setDismissing(true)
+      setTimeout(() => setVisible(false), 500)
+    }, 2400)
   }
 
   if (!visible) return null
@@ -106,42 +121,39 @@ export function ChimedInBadge() {
         }
       `}</style>
       <div
-        className="absolute z-40 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+        className="fixed z-40 left-1/2 -translate-x-1/2"
         style={{
-          animation: "chime-pop-in 0.3s ease",
+          top: 76,
+          opacity: dismissing ? 0 : 1,
+          transform: `translateX(-50%) ${dismissing ? "translateY(-6px)" : "translateY(0)"}`,
+          transition: "opacity 0.5s ease, transform 0.5s ease",
         }}
       >
-        <div className="chime-badge-flip" style={{ width: 280, height: 120 }}>
+        <div className="chime-badge-flip" style={{ width: 220, height: 52 }}>
           <div className={`chime-badge-flip-inner relative w-full h-full ${revealed ? "revealed" : ""}`}>
-            {/* Front face — bell button */}
+            {/* Front face — just the bell, no text */}
             <div className="chime-badge-face absolute inset-0 flex items-center justify-center">
               <button
                 type="button"
                 onClick={handleTap}
                 aria-label="See what you found"
-                className="relative flex size-[52px] items-center justify-center rounded-full bg-foreground text-background shadow-lg hover:shadow-xl transition-shadow"
+                className="relative flex size-[46px] items-center justify-center rounded-full bg-foreground text-background shadow-lg"
               >
                 <span className="chime-badge-ring absolute inset-0 rounded-full border-2 border-brand-accent" />
-                <Bell className="chime-badge-bell size-6 text-brand-accent" fill="currentColor" strokeWidth={1} />
+                <Bell className="chime-badge-bell size-5 text-brand-accent" fill="currentColor" strokeWidth={1} />
               </button>
             </div>
 
-            {/* Back face — revealed after tap with close button */}
+            {/* Back face — revealed after tap */}
             <div
-              className="chime-badge-face chime-badge-face-back absolute inset-0 flex flex-col items-center justify-center gap-4 rounded-2xl bg-foreground p-5 text-background"
+              className="chime-badge-face chime-badge-face-back absolute inset-0 flex items-center gap-2.5 rounded-2xl bg-foreground px-4 text-background"
               style={{ animation: revealed ? "chime-pop-in 0.3s ease" : "none" }}
             >
-              <div className="text-center">
-                <p className="text-sm font-semibold leading-tight">Found it.</p>
-                <p className="text-xs leading-tight opacity-60 mt-1">That's your first chime.</p>
+              <span className="size-2 shrink-0 rounded-full bg-brand-accent" />
+              <div className="min-w-0">
+                <p className="text-[13px] font-semibold leading-tight">Found it.</p>
+                <p className="text-[11px] leading-tight opacity-60">That's your first chime.</p>
               </div>
-              <button
-                type="button"
-                onClick={handleDismiss}
-                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-brand-accent text-foreground hover:opacity-90 transition-opacity"
-              >
-                Nice
-              </button>
             </div>
           </div>
         </div>

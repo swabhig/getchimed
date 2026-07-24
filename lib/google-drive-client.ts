@@ -27,7 +27,20 @@ const DRIVE_SCOPES = "https://www.googleapis.com/auth/drive.file"
  * /api/drive/token-status (a fresh server read) to confirm the connection
  * actually succeeded.
  */
-export async function connectGoogleDrive(): Promise<boolean> {
+/**
+ * Runs the incremental Drive consent flow using an ALREADY-OPEN popup
+ * window (the caller must open this synchronously, as the very first thing
+ * in its click handler, before any other awaits — see callers for why).
+ * Waits for the popup to close, then resolves. Token saving happens
+ * server-side inside /auth/callback (at the moment the code is exchanged)
+ * — not here — since this window has no reliable way to observe a session
+ * created in a different browsing context. After this resolves, the caller
+ * should re-check /api/drive/token-status (a fresh server read) to confirm
+ * the connection actually succeeded.
+ */
+export async function connectGoogleDrive(popup: Window | null): Promise<boolean> {
+  if (!popup) return false
+
   const supabase = createClient()
 
   const { data, error } = await supabase.auth.signInWithOAuth({
@@ -45,11 +58,11 @@ export async function connectGoogleDrive(): Promise<boolean> {
 
   if (error || !data?.url) {
     console.error("[google-drive] Failed to start consent flow:", error)
+    popup.close()
     return false
   }
 
-  const popup = window.open(data.url, "google-drive-consent", "width=480,height=640")
-  if (!popup) return false
+  popup.location.href = data.url
 
   // Wait for the popup to close (it self-closes via /auth/popup-complete,
   // after /auth/callback has already saved the tokens server-side).

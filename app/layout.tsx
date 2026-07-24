@@ -10,7 +10,7 @@ const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono'
 const caveat = Caveat({ subsets: ['latin'], weight: ['600', '700'], variable: '--font-caveat' })
 
 export const metadata: Metadata = {
-  title: 'getchimed',
+  title: 'Chime',
   description: 'Turn NPS survey responses into themes, flags, and an action list.',
   generator: 'v0.app',
   icons: {

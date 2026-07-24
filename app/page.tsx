@@ -89,6 +89,15 @@ export default function Page() {
 
   async function handleSignIn() {
     setSigningIn(true)
+
+    // Open the popup SYNCHRONOUSLY, right here, before any await. Mobile
+    // browsers (iOS Safari especially) only allow window.open() to succeed
+    // as a direct result of the tap — once we await anything first, the
+    // browser no longer treats it as part of the original gesture and
+    // silently blocks it. Opening blank now and redirecting once we have
+    // the real URL keeps the popup tied to the tap the whole time.
+    const popup = window.open("", "google-oauth", "width=480,height=640")
+
     const supabase = createClient()
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -100,11 +109,18 @@ export default function Page() {
 
     if (error || !data?.url) {
       console.error("Sign in error:", error)
+      popup?.close()
       setSigningIn(false)
       return
     }
 
-    const popup = window.open(data.url, "google-oauth", "width=480,height=640")
+    if (popup) {
+      popup.location.href = data.url
+    } else {
+      // Popup blocked anyway (e.g. browser setting) — nothing more we can do here.
+      setSigningIn(false)
+      return
+    }
 
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {

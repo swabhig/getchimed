@@ -182,7 +182,7 @@ export function ResultsScreen({ data, onExport, onReset, user }: ResultsScreenPr
   const highImpactThreshold = 20
 
   return (
-    <div className="relative mx-auto max-w-4xl px-4 py-10 sm:px-8">
+    <div className="mx-auto max-w-4xl px-4 py-10 sm:px-8">
       <ChimedInBadge />
       {/* Utility row */}
       <div className="mb-8 flex items-center justify-between">
