@@ -415,9 +415,6 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
         <LoadingOverlay status={status} firstName={user ? getFirstName(user) : undefined} />
       )}
       <header className="mb-6 sm:mb-6">
-        <div className="mb-3 sm:mb-3 animate-chime-rise">
-          <h2 className="text-base sm:text-lg font-bold text-foreground">Chime</h2>
-        </div>
         <div className="mb-4 sm:mb-4 flex items-center gap-3 animate-chime-rise">
           <span className="inline-flex items-center px-2.5 sm:px-3 py-1 rounded-full border border-border bg-muted text-xs font-medium text-muted-foreground">
             MVP · BETA
@@ -427,7 +424,7 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
           className="text-[1.75rem] leading-[1.15] sm:text-4xl lg:text-[2.75rem] font-extrabold tracking-tight text-foreground text-balance animate-chime-rise"
           style={{ animationDelay: "0.08s" }}
         >
-          Know what actually matters to your customers.
+          Chime. Know what actually matters to your customers.
         </h1>
         <p
           className="mt-3 sm:mt-3 text-[15px] sm:text-base leading-relaxed text-muted-foreground text-pretty max-w-lg animate-chime-rise"
