@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import Papa from "papaparse"
-import { Upload, Link2, FileSpreadsheet, ArrowRight, Check, Loader2, AlertCircle, Info, Download } from "lucide-react"
+import { Upload, Link2, FileSpreadsheet, ArrowRight, Check, Loader2, AlertCircle, Info, Download, Copy, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/client"
@@ -19,6 +19,36 @@ interface UploadScreenProps {
 }
 
 type MappingKey = "score" | "main_benefit" | "improvement" | "persona"
+
+// Exact wording for companies setting up a new survey from scratch — mirrors
+// the same 4 fields the column-mapper below expects, so a copy-pasted survey
+// always lines up with what this app can parse.
+const SURVEY_QUESTIONS: { key: MappingKey; label: string; required: boolean; question: string }[] = [
+  {
+    key: "score",
+    label: "Score",
+    required: true,
+    question: "On a scale of 0–10, how likely are you to recommend [Product] to a friend or colleague?",
+  },
+  {
+    key: "main_benefit",
+    label: "Main benefit",
+    required: true,
+    question: "What's the main benefit you get from [Product]?",
+  },
+  {
+    key: "improvement",
+    label: "Improvement",
+    required: true,
+    question: "What's one thing we could do to improve [Product] for you?",
+  },
+  {
+    key: "persona",
+    label: "Persona / role",
+    required: false,
+    question: "What's your role? (e.g. Founder, Manager, Analyst, Engineer)",
+  },
+]
 
 function ColumnSelect({
   id,
@@ -94,7 +124,21 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
   const [googleAuthLoading, setGoogleAuthLoading] = useState(false)
   const [pendingAnalysis, setPendingAnalysis] = useState<AnalysisResult | null>(null)
   const [guestConfirmed, setGuestConfirmed] = useState(false)
+  const [showFormatGuide, setShowFormatGuide] = useState(false)
+  const [copiedKey, setCopiedKey] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  function copyText(text: string, key: string) {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedKey(key)
+      setTimeout(() => setCopiedKey((k) => (k === key ? null : k)), 1500)
+    })
+  }
+
+  function copyAllQuestions() {
+    const all = SURVEY_QUESTIONS.map((q, i) => `${i + 1}. ${q.question}`).join("\n")
+    copyText(all, "all")
+  }
 
   // Fires once BOTH sides are ready, whichever finishes last: the analysis
   // pipeline (insert/analyze/benchmark) and the person's auth choice (signed
@@ -475,16 +519,16 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
         </div>
       </div>
 
-      {/* Sample file — shows people the expected format before they upload */}
+      {/* Format guide — shows people the expected format before they upload */}
       <div className="mb-3 sm:mb-4 flex justify-center">
-        <a
-          href="/sample-nps-data.csv"
-          download
+        <button
+          type="button"
+          onClick={() => setShowFormatGuide(true)}
           className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
         >
-          <Download className="size-3.5" />
-          Not sure what format? Download a sample CSV
-        </a>
+          <Info className="size-3.5" />
+          Not sure what data to send? See the format guide
+        </button>
       </div>
 
       {/* Source input */}
@@ -882,6 +926,92 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
                 ? "Your analysis is ready to view. Sign in to save it permanently."
                 : "We're analyzing your responses in the background — pick one and we'll take you straight there."}
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Format guide modal */}
+      {showFormatGuide && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          onClick={() => setShowFormatGuide(false)}
+        >
+          <div
+            className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-lg border border-border bg-background p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <h2 className="text-lg font-semibold text-foreground">Get your data in the right shape</h2>
+              <button
+                onClick={() => setShowFormatGuide(false)}
+                aria-label="Close"
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            {/* Already have data */}
+            <div className="mt-5 rounded-lg border border-border bg-muted/50 p-4">
+              <h3 className="text-sm font-medium text-foreground">Already have NPS data?</h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Download a sample file to see the expected shape — you'll map your own column names to it after
+                uploading, so they don't need to match exactly.
+              </p>
+              <a
+                href="/sample-nps-data.csv"
+                download
+                className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+              >
+                <Download className="size-3.5" />
+                Download sample CSV
+              </a>
+            </div>
+
+            {/* Setting up a new survey */}
+            <div className="mt-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium text-foreground">Setting up a new survey?</h3>
+                <button
+                  onClick={copyAllQuestions}
+                  className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+                >
+                  {copiedKey === "all" ? <Check className="size-3.5 text-promoter" /> : <Copy className="size-3.5" />}
+                  Copy all
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Ask these 4 questions in Google Forms, Typeform, or whatever tool you already use.
+              </p>
+
+              <div className="mt-3 space-y-2">
+                {SURVEY_QUESTIONS.map((q) => (
+                  <div
+                    key={q.key}
+                    className="flex items-start justify-between gap-3 rounded-md border border-border bg-card p-3"
+                  >
+                    <div>
+                      <p className="text-xs font-medium text-foreground">
+                        {q.label}
+                        {q.required ? (
+                          <span className="ml-1 text-detractor">*</span>
+                        ) : (
+                          <span className="ml-1 text-muted-foreground">(optional)</span>
+                        )}
+                      </p>
+                      <p className="mt-0.5 text-sm text-foreground">{q.question}</p>
+                    </div>
+                    <button
+                      onClick={() => copyText(q.question, q.key)}
+                      aria-label={`Copy ${q.label} question`}
+                      className="shrink-0 text-muted-foreground hover:text-foreground"
+                    >
+                      {copiedKey === q.key ? <Check className="size-4 text-promoter" /> : <Copy className="size-4" />}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}
