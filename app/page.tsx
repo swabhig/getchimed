@@ -180,6 +180,12 @@ export default function Page() {
             >
               About
             </Link>
+            <Link
+              href="/privacy"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Privacy
+            </Link>
             {!user && (
               <button
                 type="button"

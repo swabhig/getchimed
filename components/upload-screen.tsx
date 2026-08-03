@@ -1,9 +1,8 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import Link from "next/link"
 import Papa from "papaparse"
-import { Upload, Link2, FileSpreadsheet, ArrowRight, Check, Loader2, AlertCircle, Info, Download, Copy, X } from "lucide-react"
+import { Upload, Link2, FileSpreadsheet, ArrowRight, Check, Loader2, AlertCircle, Download, Copy, X, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/client"
@@ -468,7 +467,7 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
           className="text-[1.75rem] leading-[1.15] sm:text-4xl lg:text-[2.75rem] font-extrabold tracking-tight text-foreground text-balance animate-chime-rise"
           style={{ animationDelay: "0.08s" }}
         >
-          Know what actually matters to your customers.
+          Know what <span className="text-brand-accent">actually matters</span> to your customers.
         </h1>
         <p
           className="mt-3 sm:mt-3 text-[15px] sm:text-base leading-relaxed text-muted-foreground text-pretty max-w-lg animate-chime-rise"
@@ -477,20 +476,6 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
           Upload your NPS survey responses. Extract 2–3 high-impact themes that reveal what truly drives satisfaction — without the noise.
         </p>
       </header>
-
-      {/* Trust line — same rounded-card language as the rest of the page, not a full-bleed strip */}
-      <div
-        className="mb-4 sm:mb-4 flex items-center gap-2.5 rounded-xl bg-muted px-4 py-3 sm:py-2.5 animate-chime-rise"
-        style={{ animationDelay: "0.24s" }}
-      >
-        <Info className="size-4 shrink-0 text-muted-foreground" />
-        <p className="text-xs leading-snug text-muted-foreground">
-          Used only for this analysis — never sold or used to train models.{" "}
-          <Link href="/privacy" target="_blank" className="font-medium text-foreground underline underline-offset-2">
-            Privacy Policy
-          </Link>
-        </p>
-      </div>
 
       {/* Source toggle */}
       <div className="mb-2 sm:mb-3 flex justify-center">
@@ -520,13 +505,13 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
       </div>
 
       {/* Format guide — shows people the expected format before they upload */}
-      <div className="mb-3 sm:mb-4 flex justify-center">
+      <div className="mb-4 sm:mb-5 flex justify-center">
         <button
           type="button"
           onClick={() => setShowFormatGuide(true)}
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+          className="animate-chime-ripple inline-flex items-center gap-1.5 rounded-full bg-brand-accent px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-transform hover:scale-105 active:scale-95"
         >
-          <Info className="size-3.5" />
+          <Sparkles className="size-3.5" />
           Not sure what data to send? See the format guide
         </button>
       </div>
@@ -814,6 +799,10 @@ export function UploadScreen({ user, onAnalyze }: UploadScreenProps) {
           )}
         </button>
       </div>
+
+      <p className="mt-3 text-center text-[11px] text-muted-foreground">
+        Used only for this analysis — never sold or used to train models.
+      </p>
 
       {/* Google Auth Modal */}
       {showGoogleAuth && (
