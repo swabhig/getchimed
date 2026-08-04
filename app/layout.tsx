@@ -72,6 +72,21 @@ export default function RootLayout({
                 <a href="/terms" className="hover:text-foreground hover:underline text-xs">
                   Terms
                 </a>
+                <span className="text-xs">·</span>
+                <a
+                  href="https://twelve.tools"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Featured on Twelve Tools"
+                  className="inline-flex items-center"
+                >
+                  <img
+                    src="https://twelve.tools/badge0-white.svg"
+                    alt="Featured on Twelve Tools"
+                    width={148}
+                    height={40}
+                  />
+                </a>
               </div>
             </div>
           </footer>
