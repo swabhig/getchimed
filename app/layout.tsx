@@ -11,7 +11,7 @@ const caveat = Caveat({ subsets: ['latin'], weight: ['600', '700'], variable: '-
 
 export const metadata: Metadata = {
   title: 'getchimed',
-  description: 'Turn NPS survey responses into themes, flags, and an action list.',
+  description: 'getchimed — Turn NPS survey responses into themes, flags, and an action list.',
   generator: 'v0.app',
   icons: {
     icon: [
